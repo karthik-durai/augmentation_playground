@@ -17,19 +17,34 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
   color: var(--ink);
   background: radial-gradient(circle at top, #fff7ea 0%, var(--bg) 45%, #e7eef0 100%);
+  min-height: 100svh;
 }
 
 .page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 56px 24px 80px;
-  display: grid;
+  padding: 56px 24px 24px;
+  display: flex;
+  flex-direction: column;
   gap: 32px;
+  height: 100svh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .hero {
@@ -73,6 +88,10 @@ h1 {
   box-shadow: var(--shadow);
   padding: 28px;
   border: 1px solid var(--border);
+  min-height: 0;
+  display: grid;
+  height: 100%;
+  flex: 1 1 auto;
 }
 
 .card-header,
@@ -163,28 +182,31 @@ canvas {
 
 .workspace-grid {
   display: grid;
-  gap: 24px;
+  gap: 20px;
+  height: 100%;
 }
 
-.row {
+.column {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  min-height: 0;
+  grid-template-rows: auto 1fr;
 }
 
-.row-header {
+.column-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.row-header h3 {
+.column-header h3 {
   margin: 0;
   font-family: var(--font-head);
   font-size: 1.1rem;
 }
 
-.row-header .status {
+.column-header .status {
   margin: 0;
 }
 
@@ -202,32 +224,22 @@ canvas {
 }
 
 .panel-large {
-  height: 360px;
+  height: 100%;
+  min-height: 0;
 }
 
 @media (min-width: 900px) {
   .page {
-    grid-template-columns: 1.1fr 0.9fr;
     align-items: start;
   }
 
-  .hero {
-    grid-column: 1;
-  }
-
   .picker-card {
-    grid-column: 2;
-    justify-self: end;
-    align-self: start;
+    align-self: flex-start;
     max-width: 360px;
   }
 
-  .workspace {
-    grid-column: 1 / -1;
-  }
-
   .workspace-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
