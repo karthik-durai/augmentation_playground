@@ -252,6 +252,22 @@ canvas {
   padding: 10px;
 }
 
+.control-group {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.control-group h4 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
 .control {
   display: grid;
   gap: 8px;

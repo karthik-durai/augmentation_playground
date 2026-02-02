@@ -41,6 +41,42 @@
           </div>
           <div class="panel-slot panel-large">
             <div class="controls">
+              <div class="control-group">
+                <h4>Spatial</h4>
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="flip-enabled" checked />
+                    RandomFlip
+                  </label>
+                </div>
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="affine-enabled" checked />
+                    RandomAffine
+                  </label>
+                </div>
+              </div>
+              <div class="control-group">
+                <h4>Intensity</h4>
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="noise-enabled" checked />
+                    RandomNoise
+                  </label>
+                </div>
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="gamma-enabled" />
+                    RandomGamma
+                  </label>
+                </div>
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="bias-enabled" />
+                    RandomBiasField
+                  </label>
+                </div>
+              </div>
               <div class="control">
                 <label for="axis-select">Axis</label>
                 <select id="axis-select">
@@ -53,24 +89,6 @@
                 <label for="slice-range">Slice</label>
                 <input id="slice-range" type="range" min="0" max="0" value="0" />
                 <span id="slice-value">0</span>
-              </div>
-              <div class="control">
-                <label class="checkbox">
-                  <input type="checkbox" id="flip-enabled" checked />
-                  RandomFlip
-                </label>
-              </div>
-              <div class="control">
-                <label class="checkbox">
-                  <input type="checkbox" id="affine-enabled" checked />
-                  RandomAffine
-                </label>
-              </div>
-              <div class="control">
-                <label class="checkbox">
-                  <input type="checkbox" id="noise-enabled" checked />
-                  RandomNoise
-                </label>
               </div>
               <div class="control">
                 <button class="button button-outline" id="export-config">Export config</button>

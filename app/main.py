@@ -93,17 +93,40 @@ def _build_transform_config(transforms_payload: Dict[str, Any]) -> Dict[str, Any
             }
         )
 
-    noise = transforms_payload.get("noise")
-    if isinstance(noise, dict) and noise.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomNoise",
-                "params": {
-                    "mean": float(noise.get("mean", 0.0)),
-                    "std": float(noise.get("std", 0.1)),
-                },
-            }
-        )
+    intensity = transforms_payload.get("intensity")
+    if isinstance(intensity, dict):
+        noise = intensity.get("noise")
+        if isinstance(noise, dict) and noise.get("enabled"):
+            transforms.append(
+                {
+                    "name": "RandomNoise",
+                    "params": {
+                        "mean": float(noise.get("mean", 0.0)),
+                        "std": float(noise.get("std", 0.1)),
+                    },
+                }
+            )
+        gamma = intensity.get("gamma")
+        if isinstance(gamma, dict) and gamma.get("enabled"):
+            transforms.append(
+                {
+                    "name": "RandomGamma",
+                    "params": {
+                        "log_gamma": gamma.get("logGamma", (-0.3, 0.3)),
+                    },
+                }
+            )
+        bias = intensity.get("bias")
+        if isinstance(bias, dict) and bias.get("enabled"):
+            transforms.append(
+                {
+                    "name": "RandomBiasField",
+                    "params": {
+                        "coefficients": bias.get("coefficients", 0.5),
+                        "order": bias.get("order", 3),
+                    },
+                }
+            )
 
     return {"library": "torchio", "transforms": transforms}
 
@@ -196,11 +219,25 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
             )
         )
 
-    noise = transforms_payload.get("noise")
-    if isinstance(noise, dict) and noise.get("enabled"):
-        transform_list.append(
-            tio.RandomNoise(mean=noise.get("mean", 0.0), std=noise.get("std", 0.1))
-        )
+    intensity = transforms_payload.get("intensity")
+    if isinstance(intensity, dict):
+        noise = intensity.get("noise")
+        if isinstance(noise, dict) and noise.get("enabled"):
+            transform_list.append(
+                tio.RandomNoise(mean=noise.get("mean", 0.0), std=noise.get("std", 0.1))
+            )
+        gamma = intensity.get("gamma")
+        if isinstance(gamma, dict) and gamma.get("enabled"):
+            transform_list.append(
+                tio.RandomGamma(log_gamma=gamma.get("logGamma", (-0.3, 0.3)))
+            )
+        bias = intensity.get("bias")
+        if isinstance(bias, dict) and bias.get("enabled"):
+            transform_list.append(
+                tio.RandomBiasField(
+                    coefficients=bias.get("coefficients", 0.5), order=bias.get("order", 3)
+                )
+            )
 
     if transform_list:
         composed = tio.Compose(transform_list)
