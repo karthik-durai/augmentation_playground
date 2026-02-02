@@ -33,9 +33,9 @@ async function initNiivue() {
   }
 
   const tripleViewLayout = [
-    { sliceType: SLICE_TYPE.AXIAL, position: [0, 0, 1 / 3, 1] },
-    { sliceType: SLICE_TYPE.CORONAL, position: [1 / 3, 0, 1 / 3, 1] },
-    { sliceType: SLICE_TYPE.SAGITTAL, position: [2 / 3, 0, 1 / 3, 1] },
+    { sliceType: SLICE_TYPE.AXIAL, position: [0, 0, 1, 1 / 3] },
+    { sliceType: SLICE_TYPE.CORONAL, position: [0, 1 / 3, 1, 1 / 3] },
+    { sliceType: SLICE_TYPE.SAGITTAL, position: [0, 2 / 3, 1, 1 / 3] },
   ];
 
   nvSelected.setCustomLayout(tripleViewLayout);
