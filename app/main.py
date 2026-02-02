@@ -94,6 +94,79 @@ def _build_transform_config(transforms_payload: Dict[str, Any]) -> Dict[str, Any
             }
         )
 
+    elastic = transforms_payload.get("elastic")
+    if isinstance(elastic, dict) and elastic.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomElasticDeformation",
+                "params": {
+                    "num_control_points": elastic.get("numControlPoints", 7),
+                    "max_displacement": elastic.get("maxDisplacement", 7),
+                },
+            }
+        )
+
+    anisotropy = transforms_payload.get("anisotropy")
+    if isinstance(anisotropy, dict) and anisotropy.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomAnisotropy",
+                "params": {
+                    "axes": anisotropy.get("axes", (2,)),
+                    "downsampling": anisotropy.get("downsampling", 2),
+                },
+            }
+        )
+
+    motion = transforms_payload.get("motion")
+    if isinstance(motion, dict) and motion.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomMotion",
+                "params": {
+                    "degrees": motion.get("degrees", 10),
+                    "translation": motion.get("translation", 10),
+                    "num_transforms": motion.get("numTransforms", 2),
+                },
+            }
+        )
+
+    ghosting = transforms_payload.get("ghosting")
+    if isinstance(ghosting, dict) and ghosting.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomGhosting",
+                "params": {
+                    "num_ghosts": ghosting.get("numGhosts", 4),
+                    "intensity": ghosting.get("intensity", 0.5),
+                },
+            }
+        )
+
+    spike = transforms_payload.get("spike")
+    if isinstance(spike, dict) and spike.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomSpike",
+                "params": {
+                    "num_spikes": spike.get("numSpikes", 1),
+                    "intensity": spike.get("intensity", 1.0),
+                },
+            }
+        )
+
+    swap = transforms_payload.get("swap")
+    if isinstance(swap, dict) and swap.get("enabled"):
+        transforms.append(
+            {
+                "name": "RandomSwap",
+                "params": {
+                    "patch_size": swap.get("patchSize", 15),
+                    "num_iterations": swap.get("numIterations", 100),
+                },
+            }
+        )
+
     intensity = transforms_payload.get("intensity")
     if isinstance(intensity, dict):
         noise = intensity.get("noise")
@@ -125,6 +198,16 @@ def _build_transform_config(transforms_payload: Dict[str, Any]) -> Dict[str, Any
                     "params": {
                         "coefficients": bias.get("coefficients", 0.5),
                         "order": bias.get("order", 3),
+                    },
+                }
+            )
+        blur = intensity.get("blur")
+        if isinstance(blur, dict) and blur.get("enabled"):
+            transforms.append(
+                {
+                    "name": "RandomBlur",
+                    "params": {
+                        "std": blur.get("std", (0, 2)),
                     },
                 }
             )
@@ -221,6 +304,61 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
             )
         )
 
+    elastic = transforms_payload.get("elastic")
+    if isinstance(elastic, dict) and elastic.get("enabled"):
+        transform_list.append(
+            tio.RandomElasticDeformation(
+                num_control_points=elastic.get("numControlPoints", 7),
+                max_displacement=elastic.get("maxDisplacement", 7),
+            )
+        )
+
+    anisotropy = transforms_payload.get("anisotropy")
+    if isinstance(anisotropy, dict) and anisotropy.get("enabled"):
+        transform_list.append(
+            tio.RandomAnisotropy(
+                axes=anisotropy.get("axes", (2,)),
+                downsampling=anisotropy.get("downsampling", 2),
+            )
+        )
+
+    motion = transforms_payload.get("motion")
+    if isinstance(motion, dict) and motion.get("enabled"):
+        transform_list.append(
+            tio.RandomMotion(
+                degrees=motion.get("degrees", 10),
+                translation=motion.get("translation", 10),
+                num_transforms=motion.get("numTransforms", 2),
+            )
+        )
+
+    ghosting = transforms_payload.get("ghosting")
+    if isinstance(ghosting, dict) and ghosting.get("enabled"):
+        transform_list.append(
+            tio.RandomGhosting(
+                num_ghosts=ghosting.get("numGhosts", 4),
+                intensity=ghosting.get("intensity", 0.5),
+            )
+        )
+
+    spike = transforms_payload.get("spike")
+    if isinstance(spike, dict) and spike.get("enabled"):
+        transform_list.append(
+            tio.RandomSpike(
+                num_spikes=spike.get("numSpikes", 1),
+                intensity=spike.get("intensity", 1.0),
+            )
+        )
+
+    swap = transforms_payload.get("swap")
+    if isinstance(swap, dict) and swap.get("enabled"):
+        transform_list.append(
+            tio.RandomSwap(
+                patch_size=swap.get("patchSize", 15),
+                num_iterations=swap.get("numIterations", 100),
+            )
+        )
+
     intensity = transforms_payload.get("intensity")
     if isinstance(intensity, dict):
         noise = intensity.get("noise")
@@ -239,6 +377,11 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
                 tio.RandomBiasField(
                     coefficients=bias.get("coefficients", 0.5), order=bias.get("order", 3)
                 )
+            )
+        blur = intensity.get("blur")
+        if isinstance(blur, dict) and blur.get("enabled"):
+            transform_list.append(
+                tio.RandomBlur(std=blur.get("std", (0, 2)))
             )
 
     if transform_list:

@@ -15,6 +15,13 @@ const affineEnabled = document.getElementById("affine-enabled");
 const noiseEnabled = document.getElementById("noise-enabled");
 const gammaEnabled = document.getElementById("gamma-enabled");
 const biasEnabled = document.getElementById("bias-enabled");
+const blurEnabled = document.getElementById("blur-enabled");
+const elasticEnabled = document.getElementById("elastic-enabled");
+const anisotropyEnabled = document.getElementById("anisotropy-enabled");
+const motionEnabled = document.getElementById("motion-enabled");
+const ghostingEnabled = document.getElementById("ghosting-enabled");
+const spikeEnabled = document.getElementById("spike-enabled");
+const swapEnabled = document.getElementById("swap-enabled");
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
 const previewPlaceholder = document.getElementById("preview-placeholder");
@@ -37,18 +44,13 @@ async function initNiivue() {
     return;
   }
 
-  nvSelected = new Niivue();
+  nvSelected = new Niivue({
+    crosshairWidth: 0
+  });
   nvSelected.opts.dragAndDropEnabled = false;
   await nvSelected.attachToCanvas(canvasSelected);
 
-  const tripleViewLayout = [
-    { sliceType: SLICE_TYPE.AXIAL, position: [0, 0, 1, 1 / 3] },
-    { sliceType: SLICE_TYPE.CORONAL, position: [0, 1 / 3, 1, 1 / 3] },
-    { sliceType: SLICE_TYPE.SAGITTAL, position: [0, 2 / 3, 1, 1 / 3] },
-  ];
-
-  nvSelected.setCustomLayout(tripleViewLayout);
-  nvSelected.setSliceType(SLICE_TYPE.MULTIPLANAR);
+  nvSelected.setSliceType(SLICE_TYPE.AXIAL);
 }
 
 async function loadVolumeToAll(file) {
@@ -178,6 +180,13 @@ function syncSelectedViewer() {
   const axisIndex = axis === "sagittal" ? 0 : axis === "coronal" ? 1 : 2;
   const sliceNorm = volumeShape[axisIndex] > 1 ? index / (volumeShape[axisIndex] - 1) : 0.5;
 
+  const targetSliceType =
+    axis === "sagittal"
+      ? SLICE_TYPE.SAGITTAL
+      : axis === "coronal"
+        ? SLICE_TYPE.CORONAL
+        : SLICE_TYPE.AXIAL;
+
   const target = {
     sagittal: lastSliceIndex.sagittal ?? Math.floor((volumeShape[0] - 1) / 2),
     coronal: lastSliceIndex.coronal ?? Math.floor((volumeShape[1] - 1) / 2),
@@ -186,18 +195,11 @@ function syncSelectedViewer() {
   target[axis] = index;
 
   if (typeof nvSelected.setSliceFrac === "function") {
-    const targetSliceType =
-      axis === "sagittal"
-        ? SLICE_TYPE.SAGITTAL
-        : axis === "coronal"
-          ? SLICE_TYPE.CORONAL
-          : SLICE_TYPE.AXIAL;
     nvSelected.setSliceType(targetSliceType);
     if (typeof nvSelected.setSliceMM === "function") {
       nvSelected.setSliceMM(false);
     }
     nvSelected.setSliceFrac(sliceNorm);
-    nvSelected.setSliceType(SLICE_TYPE.MULTIPLANAR);
     nvSelected.drawScene();
     lastSliceIndex = target;
     return;
@@ -205,6 +207,7 @@ function syncSelectedViewer() {
 
   const current = nvSelected.scene?.crosshairPos;
   if (Array.isArray(current) && current.length >= 3 && typeof nvSelected.moveCrosshairInVox === "function") {
+    nvSelected.setSliceType(targetSliceType);
     const currentVox = current.map((value, idx) => {
       if (value <= 1.5) {
         return Math.round(value * (volumeShape[idx] - 1));
@@ -223,6 +226,7 @@ function syncSelectedViewer() {
   }
 
   if (typeof nvSelected.moveCrosshairInVox === "function") {
+    nvSelected.setSliceType(targetSliceType);
     const delta = [
       target.sagittal - (lastSliceIndex.sagittal ?? target.sagittal),
       target.coronal - (lastSliceIndex.coronal ?? target.coronal),
@@ -247,6 +251,37 @@ function currentTransforms() {
       degrees: 10,
       translation: 5,
     },
+    elastic: {
+      enabled: !!elasticEnabled?.checked,
+      numControlPoints: 7,
+      maxDisplacement: 7,
+    },
+    anisotropy: {
+      enabled: !!anisotropyEnabled?.checked,
+      axes: [2],
+      downsampling: 2,
+    },
+    motion: {
+      enabled: !!motionEnabled?.checked,
+      degrees: 10,
+      translation: 10,
+      numTransforms: 2,
+    },
+    ghosting: {
+      enabled: !!ghostingEnabled?.checked,
+      numGhosts: 4,
+      intensity: 0.5,
+    },
+    spike: {
+      enabled: !!spikeEnabled?.checked,
+      numSpikes: 1,
+      intensity: 1.0,
+    },
+    swap: {
+      enabled: !!swapEnabled?.checked,
+      patchSize: 15,
+      numIterations: 100,
+    },
     intensity: {
       noise: {
         enabled: !!noiseEnabled?.checked,
@@ -261,6 +296,10 @@ function currentTransforms() {
         enabled: !!biasEnabled?.checked,
         coefficients: 0.5,
         order: 3,
+      },
+      blur: {
+        enabled: !!blurEnabled?.checked,
+        std: [0, 2],
       },
     },
   };
@@ -325,9 +364,23 @@ sliceRange?.addEventListener("input", () => {
   requestPreview();
 });
 
-[flipEnabled, affineEnabled, noiseEnabled, gammaEnabled, biasEnabled].forEach((input) => {
+[
+  flipEnabled,
+  affineEnabled,
+  elasticEnabled,
+  anisotropyEnabled,
+  motionEnabled,
+  ghostingEnabled,
+  spikeEnabled,
+  swapEnabled,
+  noiseEnabled,
+  gammaEnabled,
+  biasEnabled,
+  blurEnabled,
+].forEach((input) => {
   input?.addEventListener("change", requestPreview);
 });
+
 
 exportConfigButton?.addEventListener("click", async () => {
   try {
