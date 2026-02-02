@@ -13,6 +13,8 @@ const sliceValue = document.getElementById("slice-value");
 const flipEnabled = document.getElementById("flip-enabled");
 const affineEnabled = document.getElementById("affine-enabled");
 const noiseEnabled = document.getElementById("noise-enabled");
+const gammaEnabled = document.getElementById("gamma-enabled");
+const biasEnabled = document.getElementById("bias-enabled");
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
 const previewPlaceholder = document.getElementById("preview-placeholder");
@@ -21,6 +23,7 @@ let nvSelected;
 let volumeId = null;
 let volumeShape = null;
 let lastSliceIndex = { sagittal: null, coronal: null, axial: null };
+let previewSeed = Math.floor(Math.random() * 1e9);
 
 async function initNiivue() {
   if (!canvasSelected) return;
@@ -149,6 +152,7 @@ async function uploadVolume(file) {
   const payload = await response.json();
   volumeId = payload.volume_id;
   volumeShape = payload.shape;
+  previewSeed = Math.floor(Math.random() * 1e9);
   updateSliceRange();
   requestPreview();
 }
@@ -243,10 +247,21 @@ function currentTransforms() {
       degrees: 10,
       translation: 5,
     },
-    noise: {
-      enabled: !!noiseEnabled?.checked,
-      mean: 0.0,
-      std: 0.1,
+    intensity: {
+      noise: {
+        enabled: !!noiseEnabled?.checked,
+        mean: 0.0,
+        std: 0.1,
+      },
+      gamma: {
+        enabled: !!gammaEnabled?.checked,
+        logGamma: [-0.3, 0.3],
+      },
+      bias: {
+        enabled: !!biasEnabled?.checked,
+        coefficients: 0.5,
+        order: 3,
+      },
     },
   };
 }
@@ -269,6 +284,7 @@ async function requestPreview() {
         volume_id: volumeId,
         axis,
         index,
+        seed: previewSeed,
         transforms: currentTransforms(),
       }),
     });
@@ -309,7 +325,7 @@ sliceRange?.addEventListener("input", () => {
   requestPreview();
 });
 
-[flipEnabled, affineEnabled, noiseEnabled].forEach((input) => {
+[flipEnabled, affineEnabled, noiseEnabled, gammaEnabled, biasEnabled].forEach((input) => {
   input?.addEventListener("change", requestPreview);
 });
 

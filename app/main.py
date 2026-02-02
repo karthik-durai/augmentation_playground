@@ -1,4 +1,5 @@
 import io
+import random
 import tempfile
 from pathlib import Path
 from typing import Any, Dict
@@ -192,6 +193,7 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
     axis = payload.get("axis", "axial")
     index = payload.get("index", 0)
     transforms_payload = payload.get("transforms", {})
+    seed = payload.get("seed")
 
     if not volume_id or volume_id not in _VOLUME_STORE:
         raise HTTPException(status_code=404, detail="Volume not found.")
@@ -240,6 +242,15 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
             )
 
     if transform_list:
+        if seed is not None:
+            try:
+                seed_value = int(seed)
+            except (TypeError, ValueError):
+                seed_value = None
+            if seed_value is not None:
+                random.seed(seed_value)
+                np.random.seed(seed_value)
+                torch.manual_seed(seed_value)
         composed = tio.Compose(transform_list)
         subject = composed(subject)
 
