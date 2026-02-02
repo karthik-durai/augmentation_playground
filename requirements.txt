@@ -1,3 +1,9 @@
 fastapi
 uvicorn[standard]
 jinja2
+numpy
+nibabel
+torch
+torchio
+pillow
+python-multipart

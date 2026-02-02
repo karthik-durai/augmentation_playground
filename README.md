@@ -2,7 +2,7 @@
 
 Local-only FastAPI app for staging 3D NIfTI MRI files in the browser.
 
-## Run
+## Development
 
 ```bash
 python -m venv .venv
@@ -12,3 +12,10 @@ uvicorn app.main:app --reload
 ```
 
 Open `http://127.0.0.1:8000`.
+
+## Docker (with reload)
+
+```bash
+docker build -t augmentation-playground .
+docker run --rm -p 8000:8000 -v "$PWD/app:/app/app" augmentation-playground
+```
