@@ -130,6 +130,9 @@ h1 {
   border: none;
   background: transparent;
   padding: 0;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
 }
 
 #file-input {
@@ -165,8 +168,8 @@ h1 {
 }
 
 .file-meta {
-  font-size: 0.95rem;
-  color: var(--accent);
+  font-size: 0.85rem;
+  color: var(--muted);
   font-weight: 600;
 }
 
