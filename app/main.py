@@ -399,6 +399,13 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
 
     transformed = subject["image"].data.squeeze(0).cpu().numpy()
     slice_2d = _slice_from_volume(transformed, axis, int(index))
+    axis_lower = axis.lower()
+    if axis_lower == "axial":
+        slice_2d = np.rot90(slice_2d, k=3)
+    elif axis_lower == "coronal":
+        slice_2d = np.rot90(slice_2d, k=1)
+    elif axis_lower == "sagittal":
+        slice_2d = np.rot90(np.fliplr(slice_2d), k=-1)
     slice_uint8 = _normalize_to_uint8(slice_2d)
 
     image = Image.fromarray(slice_uint8)

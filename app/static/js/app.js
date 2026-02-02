@@ -178,7 +178,9 @@ function syncSelectedViewer() {
   const axis = axisSelect?.value || "axial";
   const index = Number(sliceRange?.value || 0);
   const axisIndex = axis === "sagittal" ? 0 : axis === "coronal" ? 1 : 2;
-  const sliceNorm = volumeShape[axisIndex] > 1 ? index / (volumeShape[axisIndex] - 1) : 0.5;
+  const maxIndex = Math.max(0, volumeShape[axisIndex] - 1);
+  const viewerIndex = axis === "coronal" ? maxIndex - index : index;
+  const sliceNorm = volumeShape[axisIndex] > 1 ? viewerIndex / (volumeShape[axisIndex] - 1) : 0.5;
 
   const targetSliceType =
     axis === "sagittal"
@@ -192,7 +194,7 @@ function syncSelectedViewer() {
     coronal: lastSliceIndex.coronal ?? Math.floor((volumeShape[1] - 1) / 2),
     axial: lastSliceIndex.axial ?? Math.floor((volumeShape[2] - 1) / 2),
   };
-  target[axis] = index;
+  target[axis] = viewerIndex;
 
   if (typeof nvSelected.setSliceFrac === "function") {
     nvSelected.setSliceType(targetSliceType);
