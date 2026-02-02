@@ -1,0 +1,56 @@
+{
+  "spatial": [
+    {
+      "key": "flip",
+      "name": "Flip",
+      "torchio": "RandomFlip",
+      "enabledByDefault": false,
+      "params": {
+        "axes": {
+          "type": "select",
+          "label": "Axis",
+          "options": ["LR", "AP", "IS"],
+          "default": "LR",
+          "editable": true
+        },
+        "p": {
+          "type": "range",
+          "label": "P",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.5,
+          "editable": true
+        }
+      }
+    }
+  ],
+  "intensity": [
+    {
+      "key": "noise",
+      "name": "Noise",
+      "torchio": "RandomNoise",
+      "enabledByDefault": false,
+      "params": {
+        "mean": {
+          "type": "range",
+          "label": "Mean",
+          "min": -1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.0,
+          "editable": true
+        },
+        "std": {
+          "type": "range",
+          "label": "Std",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.1,
+          "editable": true
+        }
+      }
+    }
+  ]
+}

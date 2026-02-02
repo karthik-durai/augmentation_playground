@@ -1,0 +1,314 @@
+{
+  "spatial": [
+    {
+      "key": "flip",
+      "name": "Flip",
+      "torchio": "RandomFlip",
+      "enabledByDefault": false,
+      "params": {
+        "axes": {
+          "type": "select",
+          "label": "Axis",
+          "options": ["LR", "AP", "IS"],
+          "default": "LR",
+          "editable": true
+        },
+        "p": {
+          "type": "range",
+          "label": "P",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.5,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "affine",
+      "name": "Affine",
+      "torchio": "RandomAffine",
+      "enabledByDefault": false,
+      "params": {
+        "scales": {
+          "type": "rangePair",
+          "label": "Scale",
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.05,
+          "default": [0.9, 1.1],
+          "editable": true
+        },
+        "degrees": {
+          "type": "range",
+          "label": "Degrees",
+          "min": 0,
+          "max": 45,
+          "step": 1,
+          "default": 10,
+          "editable": true
+        },
+        "translation": {
+          "type": "range",
+          "label": "Translation",
+          "min": 0,
+          "max": 20,
+          "step": 1,
+          "default": 5,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "elastic",
+      "name": "Elastic Deformation",
+      "torchio": "RandomElasticDeformation",
+      "enabledByDefault": false,
+      "params": {
+        "numControlPoints": {
+          "type": "range",
+          "label": "Control points",
+          "min": 3,
+          "max": 15,
+          "step": 1,
+          "default": 7,
+          "editable": true
+        },
+        "maxDisplacement": {
+          "type": "range",
+          "label": "Max displacement",
+          "min": 1,
+          "max": 15,
+          "step": 1,
+          "default": 7,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "anisotropy",
+      "name": "Anisotropy",
+      "torchio": "RandomAnisotropy",
+      "enabledByDefault": false,
+      "params": {
+        "axes": {
+          "type": "select",
+          "label": "Axis",
+          "options": [0, 1, 2],
+          "default": 2,
+          "editable": true
+        },
+        "downsampling": {
+          "type": "range",
+          "label": "Downsampling",
+          "min": 1,
+          "max": 4,
+          "step": 1,
+          "default": 2,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "motion",
+      "name": "Motion",
+      "torchio": "RandomMotion",
+      "enabledByDefault": false,
+      "params": {
+        "degrees": {
+          "type": "range",
+          "label": "Degrees",
+          "min": 0,
+          "max": 45,
+          "step": 1,
+          "default": 10,
+          "editable": true
+        },
+        "translation": {
+          "type": "range",
+          "label": "Translation",
+          "min": 0,
+          "max": 20,
+          "step": 1,
+          "default": 10,
+          "editable": true
+        },
+        "numTransforms": {
+          "type": "range",
+          "label": "Transforms",
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 2,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "ghosting",
+      "name": "Ghosting",
+      "torchio": "RandomGhosting",
+      "enabledByDefault": false,
+      "params": {
+        "numGhosts": {
+          "type": "range",
+          "label": "Ghosts",
+          "min": 1,
+          "max": 8,
+          "step": 1,
+          "default": 4,
+          "editable": true
+        },
+        "intensity": {
+          "type": "range",
+          "label": "Intensity",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.5,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "spike",
+      "name": "Spike",
+      "torchio": "RandomSpike",
+      "enabledByDefault": false,
+      "params": {
+        "numSpikes": {
+          "type": "range",
+          "label": "Spikes",
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 1,
+          "editable": true
+        },
+        "intensity": {
+          "type": "range",
+          "label": "Intensity",
+          "min": 0,
+          "max": 2,
+          "step": 0.1,
+          "default": 1.0,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "swap",
+      "name": "Patch Swap",
+      "torchio": "RandomSwap",
+      "enabledByDefault": false,
+      "params": {
+        "patchSize": {
+          "type": "range",
+          "label": "Patch size",
+          "min": 5,
+          "max": 30,
+          "step": 1,
+          "default": 15,
+          "editable": true
+        },
+        "numIterations": {
+          "type": "range",
+          "label": "Iterations",
+          "min": 10,
+          "max": 200,
+          "step": 10,
+          "default": 100,
+          "editable": true
+        }
+      }
+    }
+  ],
+  "intensity": [
+    {
+      "key": "noise",
+      "name": "Noise",
+      "torchio": "RandomNoise",
+      "enabledByDefault": false,
+      "params": {
+        "mean": {
+          "type": "range",
+          "label": "Mean",
+          "min": -1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.0,
+          "editable": true
+        },
+        "std": {
+          "type": "range",
+          "label": "Std",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.1,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "gamma",
+      "name": "Gamma",
+      "torchio": "RandomGamma",
+      "enabledByDefault": false,
+      "params": {
+        "logGamma": {
+          "type": "rangePair",
+          "label": "Log gamma",
+          "min": -1,
+          "max": 1,
+          "step": 0.05,
+          "default": [-0.3, 0.3],
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "bias",
+      "name": "Bias Field",
+      "torchio": "RandomBiasField",
+      "enabledByDefault": false,
+      "params": {
+        "coefficients": {
+          "type": "range",
+          "label": "Coefficients",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "default": 0.5,
+          "editable": true
+        },
+        "order": {
+          "type": "range",
+          "label": "Order",
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 3,
+          "editable": true
+        }
+      }
+    },
+    {
+      "key": "blur",
+      "name": "Blur",
+      "torchio": "RandomBlur",
+      "enabledByDefault": false,
+      "params": {
+        "std": {
+          "type": "rangePair",
+          "label": "Std",
+          "min": 0,
+          "max": 5,
+          "step": 0.1,
+          "default": [0, 2],
+          "editable": true
+        }
+      }
+    }
+  ]
+}

@@ -10,45 +10,9 @@ const previewImage = document.getElementById("preview-image");
 const axisSelect = document.getElementById("axis-select");
 const sliceRange = document.getElementById("slice-range");
 const sliceValue = document.getElementById("slice-value");
-const flipEnabled = document.getElementById("flip-enabled");
-const flipAxis = document.getElementById("flip-axis");
-const flipP = document.getElementById("flip-p");
-const affineEnabled = document.getElementById("affine-enabled");
-const affineScaleMin = document.getElementById("affine-scale-min");
-const affineScaleMax = document.getElementById("affine-scale-max");
-const affineDegrees = document.getElementById("affine-degrees");
-const affineTranslation = document.getElementById("affine-translation");
-const noiseEnabled = document.getElementById("noise-enabled");
-const noiseMean = document.getElementById("noise-mean");
-const noiseStd = document.getElementById("noise-std");
-const gammaEnabled = document.getElementById("gamma-enabled");
-const gammaMin = document.getElementById("gamma-min");
-const gammaMax = document.getElementById("gamma-max");
-const biasEnabled = document.getElementById("bias-enabled");
-const biasCoefficients = document.getElementById("bias-coefficients");
-const biasOrder = document.getElementById("bias-order");
-const blurEnabled = document.getElementById("blur-enabled");
-const blurMin = document.getElementById("blur-min");
-const blurMax = document.getElementById("blur-max");
-const elasticEnabled = document.getElementById("elastic-enabled");
-const elasticControlPoints = document.getElementById("elastic-control-points");
-const elasticMaxDisplacement = document.getElementById("elastic-max-displacement");
-const anisotropyEnabled = document.getElementById("anisotropy-enabled");
-const anisotropyAxis = document.getElementById("anisotropy-axis");
-const anisotropyDownsampling = document.getElementById("anisotropy-downsampling");
-const motionEnabled = document.getElementById("motion-enabled");
-const motionDegrees = document.getElementById("motion-degrees");
-const motionTranslation = document.getElementById("motion-translation");
-const motionNum = document.getElementById("motion-num");
-const ghostingEnabled = document.getElementById("ghosting-enabled");
-const ghostingNum = document.getElementById("ghosting-num");
-const ghostingIntensity = document.getElementById("ghosting-intensity");
-const spikeEnabled = document.getElementById("spike-enabled");
-const spikeNum = document.getElementById("spike-num");
-const spikeIntensity = document.getElementById("spike-intensity");
-const swapEnabled = document.getElementById("swap-enabled");
-const swapPatch = document.getElementById("swap-patch");
-const swapIterations = document.getElementById("swap-iterations");
+const transformControls = document.getElementById("transform-controls");
+const transformsConfig = window.TRANSFORMS_CONFIG || { spatial: [], intensity: [] };
+const transformState = new Map();
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
 const previewPlaceholder = document.getElementById("preview-placeholder");
@@ -162,6 +126,7 @@ fileInput.addEventListener("change", (event) => {
   loadSelectedFile(file);
 });
 
+renderTransforms();
 initNiivue();
 
 async function uploadVolume(file) {
@@ -268,76 +233,45 @@ function syncSelectedViewer() {
   }
 }
 
+function readNumberValue(input, fallback) {
+  if (!input) return fallback;
+  const value = Number.parseFloat(input.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
 function currentTransforms() {
-  const readNumber = (input, fallback) => {
-    if (!input) return fallback;
-    const value = Number.parseFloat(input.value);
-    return Number.isFinite(value) ? value : fallback;
-  };
+  const spatial = {};
+  const intensity = {};
+
+  transformState.forEach((entry, key) => {
+    const payload = { enabled: !!entry.enabled?.checked };
+    const params = entry.params || {};
+
+    Object.entries(params).forEach(([paramKey, paramInfo]) => {
+      if (!paramInfo.input) return;
+      if (paramInfo.type === "rangePair") {
+        const first = readNumberValue(paramInfo.input[0], paramInfo.defaultValue[0]);
+        const second = readNumberValue(paramInfo.input[1], paramInfo.defaultValue[1]);
+        payload[paramKey] = [first, second];
+      } else if (paramInfo.type === "select") {
+        payload[paramKey] = paramInfo.input.value;
+      } else if (paramInfo.type === "number") {
+        payload[paramKey] = readNumberValue(paramInfo.input, paramInfo.defaultValue);
+      } else {
+        payload[paramKey] = readNumberValue(paramInfo.input, paramInfo.defaultValue);
+      }
+    });
+
+    if (entry.group === "intensity") {
+      intensity[key] = payload;
+    } else {
+      spatial[key] = payload;
+    }
+  });
 
   return {
-    flip: {
-      enabled: !!flipEnabled?.checked,
-      axes: [flipAxis?.value || "LR"],
-      p: readNumber(flipP, 0.5),
-    },
-    affine: {
-      enabled: !!affineEnabled?.checked,
-      scales: [readNumber(affineScaleMin, 0.9), readNumber(affineScaleMax, 1.1)],
-      degrees: readNumber(affineDegrees, 10),
-      translation: readNumber(affineTranslation, 5),
-    },
-    elastic: {
-      enabled: !!elasticEnabled?.checked,
-      numControlPoints: readNumber(elasticControlPoints, 7),
-      maxDisplacement: readNumber(elasticMaxDisplacement, 7),
-    },
-    anisotropy: {
-      enabled: !!anisotropyEnabled?.checked,
-      axes: [readNumber(anisotropyAxis, 2)],
-      downsampling: readNumber(anisotropyDownsampling, 2),
-    },
-    motion: {
-      enabled: !!motionEnabled?.checked,
-      degrees: readNumber(motionDegrees, 10),
-      translation: readNumber(motionTranslation, 10),
-      numTransforms: readNumber(motionNum, 2),
-    },
-    ghosting: {
-      enabled: !!ghostingEnabled?.checked,
-      numGhosts: readNumber(ghostingNum, 4),
-      intensity: readNumber(ghostingIntensity, 0.5),
-    },
-    spike: {
-      enabled: !!spikeEnabled?.checked,
-      numSpikes: readNumber(spikeNum, 1),
-      intensity: readNumber(spikeIntensity, 1.0),
-    },
-    swap: {
-      enabled: !!swapEnabled?.checked,
-      patchSize: readNumber(swapPatch, 15),
-      numIterations: readNumber(swapIterations, 100),
-    },
-    intensity: {
-      noise: {
-        enabled: !!noiseEnabled?.checked,
-        mean: readNumber(noiseMean, 0.0),
-        std: readNumber(noiseStd, 0.1),
-      },
-      gamma: {
-        enabled: !!gammaEnabled?.checked,
-        logGamma: [readNumber(gammaMin, -0.3), readNumber(gammaMax, 0.3)],
-      },
-      bias: {
-        enabled: !!biasEnabled?.checked,
-        coefficients: readNumber(biasCoefficients, 0.5),
-        order: readNumber(biasOrder, 3),
-      },
-      blur: {
-        enabled: !!blurEnabled?.checked,
-        std: [readNumber(blurMin, 0), readNumber(blurMax, 2)],
-      },
-    },
+    ...spatial,
+    intensity,
   };
 }
 
@@ -400,58 +334,184 @@ sliceRange?.addEventListener("input", () => {
   requestPreview();
 });
 
-[
-  flipEnabled,
-  flipAxis,
-  flipP,
-  affineEnabled,
-  affineScaleMin,
-  affineScaleMax,
-  affineDegrees,
-  affineTranslation,
-  elasticEnabled,
-  elasticControlPoints,
-  elasticMaxDisplacement,
-  anisotropyEnabled,
-  anisotropyAxis,
-  anisotropyDownsampling,
-  motionEnabled,
-  motionDegrees,
-  motionTranslation,
-  motionNum,
-  ghostingEnabled,
-  ghostingNum,
-  ghostingIntensity,
-  spikeEnabled,
-  spikeNum,
-  spikeIntensity,
-  swapEnabled,
-  swapPatch,
-  swapIterations,
-  noiseEnabled,
-  noiseMean,
-  noiseStd,
-  gammaEnabled,
-  gammaMin,
-  gammaMax,
-  biasEnabled,
-  biasCoefficients,
-  biasOrder,
-  blurEnabled,
-  blurMin,
-  blurMax,
-].forEach((input) => {
-  input?.addEventListener("change", requestPreview);
-  if (input?.type === "range") {
+function registerInput(input, valueEl) {
+  if (!input) return;
+  input.addEventListener("change", requestPreview);
+  if (input.type === "range" && valueEl) {
     input.addEventListener("input", (event) => {
-      const target = event.target;
-      const output = document.querySelector(`.range-value[data-for="${target.id}"]`);
-      if (output) {
-        output.textContent = target.value;
-      }
+      valueEl.textContent = event.target.value;
     });
   }
-});
+}
+
+function buildTransformControl(group, transform) {
+  const wrapper = document.createElement("label");
+  wrapper.className = "transform-row";
+  wrapper.dataset.name = transform.torchio || transform.name || transform.key;
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = !!transform.enabledByDefault;
+  wrapper.appendChild(checkbox);
+
+  const title = document.createElement("span");
+  title.textContent = transform.name || transform.key;
+  wrapper.appendChild(title);
+
+  const paramsMeta = document.createElement("span");
+  paramsMeta.className = "transform-params";
+  paramsMeta.textContent = "";
+  wrapper.appendChild(paramsMeta);
+
+  const inputsContainer = document.createElement("div");
+  inputsContainer.className = "transform-inputs";
+  wrapper.appendChild(inputsContainer);
+
+  const paramsState = {};
+
+  Object.entries(transform.params || {}).forEach(([paramKey, paramDef]) => {
+    const paramLabel = document.createElement("label");
+    paramLabel.textContent = paramDef.label || paramKey;
+
+    let inputElement = null;
+    let valueElement = null;
+
+    if (paramDef.type === "select") {
+      inputElement = document.createElement("select");
+      (paramDef.options || []).forEach((option) => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        if (option === paramDef.default) {
+          opt.selected = true;
+        }
+        inputElement.appendChild(opt);
+      });
+    } else if (paramDef.type === "rangePair") {
+      const first = document.createElement("input");
+      first.type = "range";
+      first.min = paramDef.min;
+      first.max = paramDef.max;
+      first.step = paramDef.step;
+      first.value = paramDef.default?.[0] ?? paramDef.min;
+
+      const second = document.createElement("input");
+      second.type = "range";
+      second.min = paramDef.min;
+      second.max = paramDef.max;
+      second.step = paramDef.step;
+      second.value = paramDef.default?.[1] ?? paramDef.max;
+
+      const values = document.createElement("span");
+      values.className = "range-value";
+      values.textContent = `${first.value}, ${second.value}`;
+
+      const updatePairValue = () => {
+        values.textContent = `${first.value}, ${second.value}`;
+      };
+      first.addEventListener("input", updatePairValue);
+      second.addEventListener("input", updatePairValue);
+
+      paramLabel.appendChild(first);
+      paramLabel.appendChild(values);
+      paramLabel.appendChild(second);
+      inputsContainer.appendChild(paramLabel);
+
+      paramsState[paramKey] = {
+        type: "rangePair",
+        input: [first, second],
+        defaultValue: paramDef.default,
+      };
+
+      registerInput(first, values);
+      registerInput(second, values);
+      return;
+    } else {
+      inputElement = document.createElement("input");
+      inputElement.type = paramDef.type === "number" ? "number" : "range";
+      if (paramDef.min !== undefined) inputElement.min = paramDef.min;
+      if (paramDef.max !== undefined) inputElement.max = paramDef.max;
+      if (paramDef.step !== undefined) inputElement.step = paramDef.step;
+      if (paramDef.default !== undefined) inputElement.value = paramDef.default;
+    }
+
+    if (inputElement) {
+      if (paramDef.type === "range") {
+        valueElement = document.createElement("span");
+        valueElement.className = "range-value";
+        valueElement.textContent = inputElement.value;
+      }
+
+      if (paramDef.editable === false) {
+        inputElement.disabled = true;
+      }
+
+      paramLabel.appendChild(inputElement);
+      if (valueElement) {
+        paramLabel.appendChild(valueElement);
+      }
+      inputsContainer.appendChild(paramLabel);
+
+      paramsState[paramKey] = {
+        type: paramDef.type,
+        input: inputElement,
+        defaultValue: paramDef.default,
+      };
+
+      registerInput(inputElement, valueElement);
+    }
+  });
+
+  transformState.set(transform.key, {
+    group,
+    enabled: checkbox,
+    params: paramsState,
+  });
+
+  registerInput(checkbox, null);
+  if (transform.enabledByDefault) {
+    inputsContainer.style.display = "grid";
+  }
+
+  checkbox.addEventListener("change", () => {
+    inputsContainer.style.display = checkbox.checked ? "grid" : "none";
+  });
+
+  return wrapper;
+}
+
+function renderTransforms() {
+  if (!transformControls) return;
+  transformControls.innerHTML = "";
+
+  const spatialDetails = document.createElement("details");
+  spatialDetails.className = "accordion";
+  spatialDetails.open = true;
+  const spatialSummary = document.createElement("summary");
+  spatialSummary.textContent = "Spatial";
+  const spatialBody = document.createElement("div");
+  spatialBody.className = "accordion-body";
+  (transformsConfig.spatial || []).forEach((transform) => {
+    spatialBody.appendChild(buildTransformControl("spatial", transform));
+  });
+  spatialDetails.appendChild(spatialSummary);
+  spatialDetails.appendChild(spatialBody);
+  transformControls.appendChild(spatialDetails);
+
+  const intensityDetails = document.createElement("details");
+  intensityDetails.className = "accordion";
+  intensityDetails.open = true;
+  const intensitySummary = document.createElement("summary");
+  intensitySummary.textContent = "Intensity";
+  const intensityBody = document.createElement("div");
+  intensityBody.className = "accordion-body";
+  (transformsConfig.intensity || []).forEach((transform) => {
+    intensityBody.appendChild(buildTransformControl("intensity", transform));
+  });
+  intensityDetails.appendChild(intensitySummary);
+  intensityDetails.appendChild(intensityBody);
+  transformControls.appendChild(intensityDetails);
+}
 
 
 exportConfigButton?.addEventListener("click", async () => {

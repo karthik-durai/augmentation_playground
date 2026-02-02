@@ -1,6 +1,7 @@
 import io
 import random
 import tempfile
+import json
 from pathlib import Path
 from typing import Any, Dict
 from uuid import uuid4
@@ -18,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+CONFIG_DIR = BASE_DIR / "config"
 
 app = FastAPI(title="Augmentation Playground")
 
@@ -218,7 +220,18 @@ def _build_torchio_snippet(config: Dict[str, Any]) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse("index.html", {"request": request})
+    config_path = CONFIG_DIR / "transforms.json"
+    if config_path.exists():
+        transforms_config = json.loads(config_path.read_text())
+    else:
+        transforms_config = {"spatial": [], "intensity": []}
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "transforms_config": transforms_config,
+        },
+    )
 
 
 @app.post("/api/volume")
