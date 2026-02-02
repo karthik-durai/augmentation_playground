@@ -11,17 +11,44 @@ const axisSelect = document.getElementById("axis-select");
 const sliceRange = document.getElementById("slice-range");
 const sliceValue = document.getElementById("slice-value");
 const flipEnabled = document.getElementById("flip-enabled");
+const flipAxis = document.getElementById("flip-axis");
+const flipP = document.getElementById("flip-p");
 const affineEnabled = document.getElementById("affine-enabled");
+const affineScaleMin = document.getElementById("affine-scale-min");
+const affineScaleMax = document.getElementById("affine-scale-max");
+const affineDegrees = document.getElementById("affine-degrees");
+const affineTranslation = document.getElementById("affine-translation");
 const noiseEnabled = document.getElementById("noise-enabled");
+const noiseMean = document.getElementById("noise-mean");
+const noiseStd = document.getElementById("noise-std");
 const gammaEnabled = document.getElementById("gamma-enabled");
+const gammaMin = document.getElementById("gamma-min");
+const gammaMax = document.getElementById("gamma-max");
 const biasEnabled = document.getElementById("bias-enabled");
+const biasCoefficients = document.getElementById("bias-coefficients");
+const biasOrder = document.getElementById("bias-order");
 const blurEnabled = document.getElementById("blur-enabled");
+const blurMin = document.getElementById("blur-min");
+const blurMax = document.getElementById("blur-max");
 const elasticEnabled = document.getElementById("elastic-enabled");
+const elasticControlPoints = document.getElementById("elastic-control-points");
+const elasticMaxDisplacement = document.getElementById("elastic-max-displacement");
 const anisotropyEnabled = document.getElementById("anisotropy-enabled");
+const anisotropyAxis = document.getElementById("anisotropy-axis");
+const anisotropyDownsampling = document.getElementById("anisotropy-downsampling");
 const motionEnabled = document.getElementById("motion-enabled");
+const motionDegrees = document.getElementById("motion-degrees");
+const motionTranslation = document.getElementById("motion-translation");
+const motionNum = document.getElementById("motion-num");
 const ghostingEnabled = document.getElementById("ghosting-enabled");
+const ghostingNum = document.getElementById("ghosting-num");
+const ghostingIntensity = document.getElementById("ghosting-intensity");
 const spikeEnabled = document.getElementById("spike-enabled");
+const spikeNum = document.getElementById("spike-num");
+const spikeIntensity = document.getElementById("spike-intensity");
 const swapEnabled = document.getElementById("swap-enabled");
+const swapPatch = document.getElementById("swap-patch");
+const swapIterations = document.getElementById("swap-iterations");
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
 const previewPlaceholder = document.getElementById("preview-placeholder");
@@ -242,67 +269,73 @@ function syncSelectedViewer() {
 }
 
 function currentTransforms() {
+  const readNumber = (input, fallback) => {
+    if (!input) return fallback;
+    const value = Number.parseFloat(input.value);
+    return Number.isFinite(value) ? value : fallback;
+  };
+
   return {
     flip: {
       enabled: !!flipEnabled?.checked,
-      axes: ["lr"],
-      p: 0.5,
+      axes: [flipAxis?.value || "LR"],
+      p: readNumber(flipP, 0.5),
     },
     affine: {
       enabled: !!affineEnabled?.checked,
-      scales: [0.9, 1.1],
-      degrees: 10,
-      translation: 5,
+      scales: [readNumber(affineScaleMin, 0.9), readNumber(affineScaleMax, 1.1)],
+      degrees: readNumber(affineDegrees, 10),
+      translation: readNumber(affineTranslation, 5),
     },
     elastic: {
       enabled: !!elasticEnabled?.checked,
-      numControlPoints: 7,
-      maxDisplacement: 7,
+      numControlPoints: readNumber(elasticControlPoints, 7),
+      maxDisplacement: readNumber(elasticMaxDisplacement, 7),
     },
     anisotropy: {
       enabled: !!anisotropyEnabled?.checked,
-      axes: [2],
-      downsampling: 2,
+      axes: [readNumber(anisotropyAxis, 2)],
+      downsampling: readNumber(anisotropyDownsampling, 2),
     },
     motion: {
       enabled: !!motionEnabled?.checked,
-      degrees: 10,
-      translation: 10,
-      numTransforms: 2,
+      degrees: readNumber(motionDegrees, 10),
+      translation: readNumber(motionTranslation, 10),
+      numTransforms: readNumber(motionNum, 2),
     },
     ghosting: {
       enabled: !!ghostingEnabled?.checked,
-      numGhosts: 4,
-      intensity: 0.5,
+      numGhosts: readNumber(ghostingNum, 4),
+      intensity: readNumber(ghostingIntensity, 0.5),
     },
     spike: {
       enabled: !!spikeEnabled?.checked,
-      numSpikes: 1,
-      intensity: 1.0,
+      numSpikes: readNumber(spikeNum, 1),
+      intensity: readNumber(spikeIntensity, 1.0),
     },
     swap: {
       enabled: !!swapEnabled?.checked,
-      patchSize: 15,
-      numIterations: 100,
+      patchSize: readNumber(swapPatch, 15),
+      numIterations: readNumber(swapIterations, 100),
     },
     intensity: {
       noise: {
         enabled: !!noiseEnabled?.checked,
-        mean: 0.0,
-        std: 0.1,
+        mean: readNumber(noiseMean, 0.0),
+        std: readNumber(noiseStd, 0.1),
       },
       gamma: {
         enabled: !!gammaEnabled?.checked,
-        logGamma: [-0.3, 0.3],
+        logGamma: [readNumber(gammaMin, -0.3), readNumber(gammaMax, 0.3)],
       },
       bias: {
         enabled: !!biasEnabled?.checked,
-        coefficients: 0.5,
-        order: 3,
+        coefficients: readNumber(biasCoefficients, 0.5),
+        order: readNumber(biasOrder, 3),
       },
       blur: {
         enabled: !!blurEnabled?.checked,
-        std: [0, 2],
+        std: [readNumber(blurMin, 0), readNumber(blurMax, 2)],
       },
     },
   };
@@ -369,19 +402,55 @@ sliceRange?.addEventListener("input", () => {
 
 [
   flipEnabled,
+  flipAxis,
+  flipP,
   affineEnabled,
+  affineScaleMin,
+  affineScaleMax,
+  affineDegrees,
+  affineTranslation,
   elasticEnabled,
+  elasticControlPoints,
+  elasticMaxDisplacement,
   anisotropyEnabled,
+  anisotropyAxis,
+  anisotropyDownsampling,
   motionEnabled,
+  motionDegrees,
+  motionTranslation,
+  motionNum,
   ghostingEnabled,
+  ghostingNum,
+  ghostingIntensity,
   spikeEnabled,
+  spikeNum,
+  spikeIntensity,
   swapEnabled,
+  swapPatch,
+  swapIterations,
   noiseEnabled,
+  noiseMean,
+  noiseStd,
   gammaEnabled,
+  gammaMin,
+  gammaMax,
   biasEnabled,
+  biasCoefficients,
+  biasOrder,
   blurEnabled,
+  blurMin,
+  blurMax,
 ].forEach((input) => {
   input?.addEventListener("change", requestPreview);
+  if (input?.type === "range") {
+    input.addEventListener("input", (event) => {
+      const target = event.target;
+      const output = document.querySelector(`.range-value[data-for="${target.id}"]`);
+      if (output) {
+        output.textContent = target.value;
+      }
+    });
+  }
 });
 
 

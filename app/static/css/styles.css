@@ -355,6 +355,37 @@ canvas {
   display: inline;
 }
 
+.transform-inputs {
+  display: none;
+  grid-column: 2 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.transform-inputs label {
+  display: grid;
+  gap: 4px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.range-value {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.transform-inputs input[type="range"],
+.transform-inputs select {
+  width: 100%;
+}
+
+.transform-row input[type="checkbox"]:checked~.transform-inputs {
+  display: grid;
+}
+
 .checkbox {
   display: flex;
   align-items: center;
