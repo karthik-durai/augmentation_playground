@@ -249,6 +249,7 @@ canvas {
   gap: 16px;
   height: 100%;
   align-content: start;
+  padding: 10px;
 }
 
 .control {
