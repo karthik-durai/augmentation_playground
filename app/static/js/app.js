@@ -84,39 +84,6 @@ async function loadVolumeToAll(file) {
 async function loadSelectedFile(file) {
   if (!file) return;
 
-  const lowerName = file.name.toLowerCase();
-  if (lowerName.endsWith(".h5") || lowerName.endsWith(".hdf5")) {
-    if (viewerStatus) {
-      viewerStatus.textContent = "Converting H5 to NIfTI...";
-    }
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("/api/convert-h5", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(detail || "H5 conversion failed.");
-      }
-
-      const blob = await response.blob();
-      const niftiFile = new File([blob], `${file.name}.nii.gz`, {
-        type: "application/gzip",
-      });
-      await loadVolumeToAll(niftiFile);
-    } catch (error) {
-      console.error(error);
-      if (viewerStatus) {
-        viewerStatus.textContent = "H5 conversion failed.";
-      }
-    }
-    return;
-  }
-
   await loadVolumeToAll(file);
 }
 
