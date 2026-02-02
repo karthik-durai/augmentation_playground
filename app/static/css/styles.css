@@ -1,0 +1,264 @@
+:root {
+  --ink: #1b1b1b;
+  --muted: #6b6b6b;
+  --panel: #ffffff;
+  --accent: #0f4c5c;
+  --accent-soft: #dceff1;
+  --shadow: 0 18px 50px rgba(15, 76, 92, 0.18);
+  --border: #e5e5e5;
+  --bg: #f3f0ea;
+  --bg-warm: #fdf9f2;
+  --radius: 18px;
+  --font-head: "Space Grotesk", "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: radial-gradient(circle at top, #fff7ea 0%, var(--bg) 45%, #e7eef0 100%);
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+  display: grid;
+  gap: 32px;
+}
+
+.hero {
+  display: grid;
+  gap: 16px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+h1 {
+  font-family: var(--font-head);
+  font-size: clamp(2.2rem, 3vw, 3.2rem);
+  margin: 0;
+}
+
+.subhead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.pill {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.card,
+.viewer,
+.workspace {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  border: 1px solid var(--border);
+}
+
+.card-header,
+.viewer-header,
+.workspace-header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.card-header h2,
+.viewer-header h2,
+.workspace-header h2 {
+  margin: 0;
+  font-family: var(--font-head);
+}
+
+.card-header p,
+.viewer-header p,
+.workspace-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.uploader {
+  border: 2px dashed var(--accent);
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f6fbfb 100%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uploader-compact {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+#file-input {
+  display: none;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 18px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(15, 76, 92, 0.2);
+}
+
+.file-meta {
+  font-size: 0.95rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.viewer-canvas,
+.panel-slot {
+  position: relative;
+  height: 200px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #f5fafb 0%, #ffffff 100%);
+  overflow: hidden;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.status {
+  margin-top: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+
+.workspace-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.row {
+  display: grid;
+  gap: 14px;
+}
+
+.row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.row-header h3 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+}
+
+.row-header .status {
+  margin: 0;
+}
+
+.panel-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 600;
+  background: repeating-linear-gradient(135deg,
+      rgba(15, 76, 92, 0.06) 0,
+      rgba(15, 76, 92, 0.06) 12px,
+      rgba(255, 255, 255, 0.7) 12px,
+      rgba(255, 255, 255, 0.7) 24px),
+    linear-gradient(180deg, #f5fafb 0%, #ffffff 100%);
+}
+
+.panel-large {
+  height: 360px;
+}
+
+@media (min-width: 900px) {
+  .page {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: start;
+  }
+
+  .hero {
+    grid-column: 1;
+  }
+
+  .picker-card {
+    grid-column: 2;
+    justify-self: end;
+    align-self: start;
+    max-width: 360px;
+  }
+
+  .workspace {
+    grid-column: 1 / -1;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .card,
+  .viewer,
+  .workspace {
+    padding: 20px;
+  }
+
+  .viewer-canvas,
+  .panel-slot {
+    height: 180px;
+  }
+
+  .panel-large {
+    height: 240px;
+  }
+}
+
+.panel-label {
+  position: absolute;
+  inset: auto 14px 12px auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 18px rgba(15, 76, 92, 0.12);
+  backdrop-filter: blur(6px);
+}
