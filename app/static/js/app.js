@@ -15,6 +15,7 @@ const affineEnabled = document.getElementById("affine-enabled");
 const noiseEnabled = document.getElementById("noise-enabled");
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
+const previewPlaceholder = document.getElementById("preview-placeholder");
 
 let nvSelected;
 let volumeId = null;
@@ -206,8 +207,17 @@ async function requestPreview() {
 
     const blob = await response.blob();
     previewImage.src = URL.createObjectURL(blob);
+    previewImage.classList.remove("is-hidden");
+    if (previewPlaceholder) {
+      previewPlaceholder.classList.add("is-hidden");
+    }
   } catch (error) {
     console.error(error);
+    previewImage.classList.add("is-hidden");
+    previewImage.removeAttribute("src");
+    if (previewPlaceholder) {
+      previewPlaceholder.classList.remove("is-hidden");
+    }
   } finally {
     previewInFlight = false;
   }
