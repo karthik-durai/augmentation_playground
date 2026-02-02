@@ -53,19 +53,6 @@ def _slice_from_volume(volume: np.ndarray, axis: str, index: int) -> np.ndarray:
     return volume[:, :, index]
 
 
-def _coerce_to_3d(volume: np.ndarray) -> np.ndarray:
-    if volume.ndim == 3:
-        return volume
-    if volume.ndim == 4:
-        channel_axis = 0
-        for axis, size in enumerate(volume.shape):
-            if size <= 5:
-                channel_axis = axis
-                break
-        return np.take(volume, indices=0, axis=channel_axis)
-    raise ValueError("Expected 3D volume.")
-
-
 def _build_transform_config(transforms_payload: Dict[str, Any]) -> Dict[str, Any]:
     transforms: list[dict[str, Any]] = []
 
@@ -258,7 +245,9 @@ async def upload_volume(file: UploadFile) -> Dict[str, Any]:
                     status_code=400, detail=f"Unable to read NIfTI: {exc}"
                 ) from exc
 
-    volume = _coerce_to_3d(image.get_fdata(dtype=np.float32))
+    volume = image.get_fdata(dtype=np.float32)
+    if volume.ndim != 3:
+        raise HTTPException(status_code=400, detail="Expected a 3D NIfTI volume.")
     volume_id = uuid4().hex
     _VOLUME_STORE[volume_id] = {
         "volume": volume,
