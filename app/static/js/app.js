@@ -13,6 +13,7 @@ const sliceValue = document.getElementById("slice-value");
 const transformControls = document.getElementById("transform-controls");
 const transformsConfig = window.TRANSFORMS_CONFIG || { spatial: [], intensity: [] };
 const transformState = new Map();
+const transformOrder = { spatial: [], intensity: [] };
 const exportConfigButton = document.getElementById("export-config");
 const copyConfigButton = document.getElementById("copy-config");
 const previewPlaceholder = document.getElementById("preview-placeholder");
@@ -242,6 +243,12 @@ function readNumberValue(input, fallback) {
 function currentTransforms() {
   const spatial = {};
   const intensity = {};
+  const spatialOrder = Array.from(
+    document.querySelectorAll('.accordion-body[data-group="spatial"] .transform-row')
+  ).map((row) => row.dataset.key);
+  const intensityOrder = Array.from(
+    document.querySelectorAll('.accordion-body[data-group="intensity"] .transform-row')
+  ).map((row) => row.dataset.key);
 
   transformState.forEach((entry, key) => {
     const payload = { enabled: !!entry.enabled?.checked };
@@ -270,6 +277,10 @@ function currentTransforms() {
   });
 
   return {
+    order: {
+      spatial: spatialOrder.length ? spatialOrder : [...transformOrder.spatial],
+      intensity: intensityOrder.length ? intensityOrder : [...transformOrder.intensity],
+    },
     ...spatial,
     intensity,
   };
@@ -348,6 +359,13 @@ function buildTransformControl(group, transform) {
   const wrapper = document.createElement("label");
   wrapper.className = "transform-row";
   wrapper.dataset.name = transform.torchio || transform.name || transform.key;
+  wrapper.dataset.key = transform.key;
+  wrapper.draggable = true;
+
+  const handle = document.createElement("span");
+  handle.className = "drag-handle";
+  handle.textContent = "||";
+  wrapper.appendChild(handle);
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -477,6 +495,48 @@ function buildTransformControl(group, transform) {
     inputsContainer.style.display = checkbox.checked ? "grid" : "none";
   });
 
+  wrapper.addEventListener("dragstart", (event) => {
+    event.dataTransfer.setData("text/plain", JSON.stringify({ key: transform.key, group }));
+    event.dataTransfer.effectAllowed = "move";
+  });
+
+  wrapper.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    wrapper.classList.add("drag-over");
+    event.dataTransfer.dropEffect = "move";
+  });
+
+  wrapper.addEventListener("dragleave", () => {
+    wrapper.classList.remove("drag-over");
+  });
+
+  wrapper.addEventListener("dragend", () => {
+    document.querySelectorAll(".transform-row.drag-over").forEach((row) => {
+      row.classList.remove("drag-over");
+    });
+  });
+
+  wrapper.addEventListener("drop", (event) => {
+    event.preventDefault();
+    wrapper.classList.remove("drag-over");
+    const data = event.dataTransfer.getData("text/plain");
+    if (!data) return;
+    const parsed = JSON.parse(data);
+    if (parsed.group !== group) return;
+    const draggedKey = parsed.key;
+    const targetKey = wrapper.dataset.key;
+    if (!draggedKey || draggedKey === targetKey) return;
+
+    const container = wrapper.parentElement;
+    const draggedEl = container.querySelector(`.transform-row[data-key="${draggedKey}"]`);
+    if (!draggedEl) return;
+
+    container.insertBefore(draggedEl, wrapper);
+    transformOrder[group] = Array.from(
+      container.querySelectorAll(".transform-row")
+    ).map((row) => row.dataset.key);
+  });
+
   return wrapper;
 }
 
@@ -491,6 +551,8 @@ function renderTransforms() {
   spatialSummary.textContent = "Spatial";
   const spatialBody = document.createElement("div");
   spatialBody.className = "accordion-body";
+  spatialBody.dataset.group = "spatial";
+  transformOrder.spatial = (transformsConfig.spatial || []).map((t) => t.key);
   (transformsConfig.spatial || []).forEach((transform) => {
     spatialBody.appendChild(buildTransformControl("spatial", transform));
   });
@@ -505,6 +567,8 @@ function renderTransforms() {
   intensitySummary.textContent = "Intensity";
   const intensityBody = document.createElement("div");
   intensityBody.className = "accordion-body";
+  intensityBody.dataset.group = "intensity";
+  transformOrder.intensity = (transformsConfig.intensity || []).map((t) => t.key);
   (transformsConfig.intensity || []).forEach((transform) => {
     intensityBody.appendChild(buildTransformControl("intensity", transform));
   });

@@ -58,148 +58,106 @@ def _slice_from_volume(volume: np.ndarray, axis: str, index: int) -> np.ndarray:
 def _build_transform_config(transforms_payload: Dict[str, Any]) -> Dict[str, Any]:
     transforms: list[dict[str, Any]] = []
 
-    flip = transforms_payload.get("flip")
-    if isinstance(flip, dict) and flip.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomFlip",
-                "params": {
-                    "axes": flip.get("axes", ("lr",)),
-                    "p": float(flip.get("p", 0.5)),
-                },
-            }
-        )
+    order = transforms_payload.get("order", {})
+    order_spatial = order.get(
+        "spatial",
+        ["flip", "affine", "elastic", "anisotropy", "motion", "ghosting", "spike", "swap"],
+    )
+    order_intensity = order.get("intensity", ["noise", "gamma", "bias", "blur"])
 
-    affine = transforms_payload.get("affine")
-    if isinstance(affine, dict) and affine.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomAffine",
-                "params": {
-                    "scales": affine.get("scales", (0.9, 1.1)),
-                    "degrees": affine.get("degrees", 10),
-                    "translation": affine.get("translation", 5),
-                },
-            }
-        )
+    def _append(name: str, params: Dict[str, Any]) -> None:
+        transforms.append({"name": name, "params": params})
 
-    elastic = transforms_payload.get("elastic")
-    if isinstance(elastic, dict) and elastic.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomElasticDeformation",
-                "params": {
-                    "num_control_points": elastic.get("numControlPoints", 7),
-                    "max_displacement": elastic.get("maxDisplacement", 7),
-                },
-            }
-        )
-
-    anisotropy = transforms_payload.get("anisotropy")
-    if isinstance(anisotropy, dict) and anisotropy.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomAnisotropy",
-                "params": {
-                    "axes": anisotropy.get("axes", (2,)),
-                    "downsampling": anisotropy.get("downsampling", 2),
-                },
-            }
-        )
-
-    motion = transforms_payload.get("motion")
-    if isinstance(motion, dict) and motion.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomMotion",
-                "params": {
-                    "degrees": motion.get("degrees", 10),
-                    "translation": motion.get("translation", 10),
-                    "num_transforms": motion.get("numTransforms", 2),
-                },
-            }
-        )
-
-    ghosting = transforms_payload.get("ghosting")
-    if isinstance(ghosting, dict) and ghosting.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomGhosting",
-                "params": {
-                    "num_ghosts": ghosting.get("numGhosts", 4),
-                    "intensity": ghosting.get("intensity", 0.5),
-                },
-            }
-        )
-
-    spike = transforms_payload.get("spike")
-    if isinstance(spike, dict) and spike.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomSpike",
-                "params": {
-                    "num_spikes": spike.get("numSpikes", 1),
-                    "intensity": spike.get("intensity", 1.0),
-                },
-            }
-        )
-
-    swap = transforms_payload.get("swap")
-    if isinstance(swap, dict) and swap.get("enabled"):
-        transforms.append(
-            {
-                "name": "RandomSwap",
-                "params": {
-                    "patch_size": swap.get("patchSize", 15),
-                    "num_iterations": swap.get("numIterations", 100),
-                },
-            }
-        )
-
-    intensity = transforms_payload.get("intensity")
-    if isinstance(intensity, dict):
-        noise = intensity.get("noise")
-        if isinstance(noise, dict) and noise.get("enabled"):
-            transforms.append(
-                {
-                    "name": "RandomNoise",
-                    "params": {
-                        "mean": float(noise.get("mean", 0.0)),
-                        "std": float(noise.get("std", 0.1)),
-                    },
-                }
+    for key in order_spatial:
+        payload = transforms_payload.get(key)
+        if not isinstance(payload, dict) or not payload.get("enabled"):
+            continue
+        if key == "flip":
+            _append(
+                "RandomFlip",
+                {"axes": payload.get("axes", ("lr",)), "p": float(payload.get("p", 0.5))},
             )
-        gamma = intensity.get("gamma")
-        if isinstance(gamma, dict) and gamma.get("enabled"):
-            transforms.append(
+        elif key == "affine":
+            _append(
+                "RandomAffine",
                 {
-                    "name": "RandomGamma",
-                    "params": {
-                        "log_gamma": gamma.get("logGamma", (-0.3, 0.3)),
-                    },
-                }
+                    "scales": payload.get("scales", (0.9, 1.1)),
+                    "degrees": payload.get("degrees", 10),
+                    "translation": payload.get("translation", 5),
+                },
             )
-        bias = intensity.get("bias")
-        if isinstance(bias, dict) and bias.get("enabled"):
-            transforms.append(
+        elif key == "elastic":
+            _append(
+                "RandomElasticDeformation",
                 {
-                    "name": "RandomBiasField",
-                    "params": {
-                        "coefficients": bias.get("coefficients", 0.5),
-                        "order": bias.get("order", 3),
-                    },
-                }
+                    "num_control_points": payload.get("numControlPoints", 7),
+                    "max_displacement": payload.get("maxDisplacement", 7),
+                },
             )
-        blur = intensity.get("blur")
-        if isinstance(blur, dict) and blur.get("enabled"):
-            transforms.append(
+        elif key == "anisotropy":
+            _append(
+                "RandomAnisotropy",
                 {
-                    "name": "RandomBlur",
-                    "params": {
-                        "std": blur.get("std", (0, 2)),
-                    },
-                }
+                    "axes": payload.get("axes", (2,)),
+                    "downsampling": payload.get("downsampling", 2),
+                },
             )
+        elif key == "motion":
+            _append(
+                "RandomMotion",
+                {
+                    "degrees": payload.get("degrees", 10),
+                    "translation": payload.get("translation", 10),
+                    "num_transforms": payload.get("numTransforms", 2),
+                },
+            )
+        elif key == "ghosting":
+            _append(
+                "RandomGhosting",
+                {
+                    "num_ghosts": payload.get("numGhosts", 4),
+                    "intensity": payload.get("intensity", 0.5),
+                },
+            )
+        elif key == "spike":
+            _append(
+                "RandomSpike",
+                {
+                    "num_spikes": payload.get("numSpikes", 1),
+                    "intensity": payload.get("intensity", 1.0),
+                },
+            )
+        elif key == "swap":
+            _append(
+                "RandomSwap",
+                {
+                    "patch_size": payload.get("patchSize", 15),
+                    "num_iterations": payload.get("numIterations", 100),
+                },
+            )
+
+    intensity = transforms_payload.get("intensity", {})
+    for key in order_intensity:
+        payload = intensity.get(key)
+        if not isinstance(payload, dict) or not payload.get("enabled"):
+            continue
+        if key == "noise":
+            _append(
+                "RandomNoise",
+                {"mean": float(payload.get("mean", 0.0)), "std": float(payload.get("std", 0.1))},
+            )
+        elif key == "gamma":
+            _append("RandomGamma", {"log_gamma": payload.get("logGamma", (-0.3, 0.3))})
+        elif key == "bias":
+            _append(
+                "RandomBiasField",
+                {
+                    "coefficients": payload.get("coefficients", 0.5),
+                    "order": payload.get("order", 3),
+                },
+            )
+        elif key == "blur":
+            _append("RandomBlur", {"std": payload.get("std", (0, 2))})
 
     return {"library": "torchio", "transforms": transforms}
 
@@ -216,6 +174,101 @@ def _build_torchio_snippet(config: Dict[str, Any]) -> str:
             lines.append(f"    tio.{name}(),")
     lines.append("])")
     return "\n".join(lines)
+
+
+def _build_transform_list(transforms_payload: Dict[str, Any]) -> list[tio.Transform]:
+    order = transforms_payload.get("order", {})
+    order_spatial = order.get(
+        "spatial",
+        ["flip", "affine", "elastic", "anisotropy", "motion", "ghosting", "spike", "swap"],
+    )
+    order_intensity = order.get("intensity", ["noise", "gamma", "bias", "blur"])
+
+    transform_list: list[tio.Transform] = []
+
+    for key in order_spatial:
+        payload = transforms_payload.get(key)
+        if not isinstance(payload, dict) or not payload.get("enabled"):
+            continue
+        if key == "flip":
+            transform_list.append(
+                tio.RandomFlip(axes=payload.get("axes", ("lr",)), p=payload.get("p", 0.5))
+            )
+        elif key == "affine":
+            transform_list.append(
+                tio.RandomAffine(
+                    scales=payload.get("scales", (0.9, 1.1)),
+                    degrees=payload.get("degrees", 10),
+                    translation=payload.get("translation", 5),
+                )
+            )
+        elif key == "elastic":
+            transform_list.append(
+                tio.RandomElasticDeformation(
+                    num_control_points=payload.get("numControlPoints", 7),
+                    max_displacement=payload.get("maxDisplacement", 7),
+                )
+            )
+        elif key == "anisotropy":
+            transform_list.append(
+                tio.RandomAnisotropy(
+                    axes=payload.get("axes", (2,)),
+                    downsampling=payload.get("downsampling", 2),
+                )
+            )
+        elif key == "motion":
+            transform_list.append(
+                tio.RandomMotion(
+                    degrees=payload.get("degrees", 10),
+                    translation=payload.get("translation", 10),
+                    num_transforms=payload.get("numTransforms", 2),
+                )
+            )
+        elif key == "ghosting":
+            transform_list.append(
+                tio.RandomGhosting(
+                    num_ghosts=payload.get("numGhosts", 4),
+                    intensity=payload.get("intensity", 0.5),
+                )
+            )
+        elif key == "spike":
+            transform_list.append(
+                tio.RandomSpike(
+                    num_spikes=payload.get("numSpikes", 1),
+                    intensity=payload.get("intensity", 1.0),
+                )
+            )
+        elif key == "swap":
+            transform_list.append(
+                tio.RandomSwap(
+                    patch_size=payload.get("patchSize", 15),
+                    num_iterations=payload.get("numIterations", 100),
+                )
+            )
+
+    intensity = transforms_payload.get("intensity", {})
+    for key in order_intensity:
+        payload = intensity.get(key)
+        if not isinstance(payload, dict) or not payload.get("enabled"):
+            continue
+        if key == "noise":
+            transform_list.append(
+                tio.RandomNoise(mean=payload.get("mean", 0.0), std=payload.get("std", 0.1))
+            )
+        elif key == "gamma":
+            transform_list.append(
+                tio.RandomGamma(log_gamma=payload.get("logGamma", (-0.3, 0.3)))
+            )
+        elif key == "bias":
+            transform_list.append(
+                tio.RandomBiasField(
+                    coefficients=payload.get("coefficients", 0.5), order=payload.get("order", 3)
+                )
+            )
+        elif key == "blur":
+            transform_list.append(tio.RandomBlur(std=payload.get("std", (0, 2))))
+
+    return transform_list
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -288,103 +341,7 @@ async def preview_slice(payload: Dict[str, Any]) -> Response:
     tensor = torch.from_numpy(volume).unsqueeze(0)
     subject = tio.Subject(image=tio.ScalarImage(tensor=tensor))
 
-    transform_list = []
-
-    flip = transforms_payload.get("flip")
-    if isinstance(flip, dict) and flip.get("enabled"):
-        transform_list.append(
-            tio.RandomFlip(axes=flip.get("axes", ("lr",)), p=flip.get("p", 0.5))
-        )
-
-    affine = transforms_payload.get("affine")
-    if isinstance(affine, dict) and affine.get("enabled"):
-        transform_list.append(
-            tio.RandomAffine(
-                scales=affine.get("scales", (0.9, 1.1)),
-                degrees=affine.get("degrees", 10),
-                translation=affine.get("translation", 5),
-            )
-        )
-
-    elastic = transforms_payload.get("elastic")
-    if isinstance(elastic, dict) and elastic.get("enabled"):
-        transform_list.append(
-            tio.RandomElasticDeformation(
-                num_control_points=elastic.get("numControlPoints", 7),
-                max_displacement=elastic.get("maxDisplacement", 7),
-            )
-        )
-
-    anisotropy = transforms_payload.get("anisotropy")
-    if isinstance(anisotropy, dict) and anisotropy.get("enabled"):
-        transform_list.append(
-            tio.RandomAnisotropy(
-                axes=anisotropy.get("axes", (2,)),
-                downsampling=anisotropy.get("downsampling", 2),
-            )
-        )
-
-    motion = transforms_payload.get("motion")
-    if isinstance(motion, dict) and motion.get("enabled"):
-        transform_list.append(
-            tio.RandomMotion(
-                degrees=motion.get("degrees", 10),
-                translation=motion.get("translation", 10),
-                num_transforms=motion.get("numTransforms", 2),
-            )
-        )
-
-    ghosting = transforms_payload.get("ghosting")
-    if isinstance(ghosting, dict) and ghosting.get("enabled"):
-        transform_list.append(
-            tio.RandomGhosting(
-                num_ghosts=ghosting.get("numGhosts", 4),
-                intensity=ghosting.get("intensity", 0.5),
-            )
-        )
-
-    spike = transforms_payload.get("spike")
-    if isinstance(spike, dict) and spike.get("enabled"):
-        transform_list.append(
-            tio.RandomSpike(
-                num_spikes=spike.get("numSpikes", 1),
-                intensity=spike.get("intensity", 1.0),
-            )
-        )
-
-    swap = transforms_payload.get("swap")
-    if isinstance(swap, dict) and swap.get("enabled"):
-        transform_list.append(
-            tio.RandomSwap(
-                patch_size=swap.get("patchSize", 15),
-                num_iterations=swap.get("numIterations", 100),
-            )
-        )
-
-    intensity = transforms_payload.get("intensity")
-    if isinstance(intensity, dict):
-        noise = intensity.get("noise")
-        if isinstance(noise, dict) and noise.get("enabled"):
-            transform_list.append(
-                tio.RandomNoise(mean=noise.get("mean", 0.0), std=noise.get("std", 0.1))
-            )
-        gamma = intensity.get("gamma")
-        if isinstance(gamma, dict) and gamma.get("enabled"):
-            transform_list.append(
-                tio.RandomGamma(log_gamma=gamma.get("logGamma", (-0.3, 0.3)))
-            )
-        bias = intensity.get("bias")
-        if isinstance(bias, dict) and bias.get("enabled"):
-            transform_list.append(
-                tio.RandomBiasField(
-                    coefficients=bias.get("coefficients", 0.5), order=bias.get("order", 3)
-                )
-            )
-        blur = intensity.get("blur")
-        if isinstance(blur, dict) and blur.get("enabled"):
-            transform_list.append(
-                tio.RandomBlur(std=blur.get("std", (0, 2)))
-            )
+    transform_list = _build_transform_list(transforms_payload)
 
     if transform_list:
         if seed is not None:
