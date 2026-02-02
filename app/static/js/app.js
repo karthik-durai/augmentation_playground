@@ -5,10 +5,20 @@ const fileMeta = document.getElementById("file-meta");
 const viewerStatus = document.getElementById("viewer-status");
 
 const canvasSelected = document.getElementById("canvas-selected");
-const canvasPreview = document.getElementById("canvas-preview");
+const previewImage = document.getElementById("preview-image");
+
+const axisSelect = document.getElementById("axis-select");
+const sliceRange = document.getElementById("slice-range");
+const sliceValue = document.getElementById("slice-value");
+const flipEnabled = document.getElementById("flip-enabled");
+const affineEnabled = document.getElementById("affine-enabled");
+const noiseEnabled = document.getElementById("noise-enabled");
+const exportConfigButton = document.getElementById("export-config");
+const copyConfigButton = document.getElementById("copy-config");
 
 let nvSelected;
-let nvPreview;
+let volumeId = null;
+let volumeShape = null;
 
 async function initNiivue() {
   if (!canvasSelected) return;
@@ -26,12 +36,6 @@ async function initNiivue() {
   nvSelected.opts.dragAndDropEnabled = false;
   await nvSelected.attachToCanvas(canvasSelected);
 
-  if (canvasPreview) {
-    nvPreview = new Niivue();
-    nvPreview.opts.dragAndDropEnabled = false;
-    await nvPreview.attachToCanvas(canvasPreview);
-  }
-
   const tripleViewLayout = [
     { sliceType: SLICE_TYPE.AXIAL, position: [0, 0, 1, 1 / 3] },
     { sliceType: SLICE_TYPE.CORONAL, position: [0, 1 / 3, 1, 1 / 3] },
@@ -40,11 +44,6 @@ async function initNiivue() {
 
   nvSelected.setCustomLayout(tripleViewLayout);
   nvSelected.setSliceType(SLICE_TYPE.MULTIPLANAR);
-
-  if (nvPreview) {
-    nvPreview.setCustomLayout(tripleViewLayout);
-    nvPreview.setSliceType(SLICE_TYPE.MULTIPLANAR);
-  }
 }
 
 async function loadVolumeToAll(file) {
@@ -64,12 +63,6 @@ async function loadVolumeToAll(file) {
     const selectedFile = new File([blob], name, { type: mimeType });
     await nvSelected.loadFromFile(selectedFile);
     nvSelected.drawScene();
-
-    if (nvPreview) {
-      const previewFile = new File([blob], name, { type: mimeType });
-      await nvPreview.loadFromFile(previewFile);
-      nvPreview.drawScene();
-    }
     if (viewerStatus) {
       viewerStatus.textContent = "Volume loaded";
     }
@@ -84,6 +77,7 @@ async function loadVolumeToAll(file) {
 async function loadSelectedFile(file) {
   if (!file) return;
 
+  await uploadVolume(file);
   await loadVolumeToAll(file);
 }
 
@@ -127,3 +121,181 @@ fileInput.addEventListener("change", (event) => {
 });
 
 initNiivue();
+
+async function uploadVolume(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/volume", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || "Upload failed");
+  }
+
+  const payload = await response.json();
+  volumeId = payload.volume_id;
+  volumeShape = payload.shape;
+  updateSliceRange();
+  requestPreview();
+}
+
+function updateSliceRange() {
+  if (!volumeShape || !sliceRange) return;
+  const axis = axisSelect?.value || "axial";
+  const axisIndex = axis === "sagittal" ? 0 : axis === "coronal" ? 1 : 2;
+  const maxIndex = Math.max(0, volumeShape[axisIndex] - 1);
+  sliceRange.max = String(maxIndex);
+  if (Number(sliceRange.value) > maxIndex) {
+    sliceRange.value = String(Math.floor(maxIndex / 2));
+  }
+  if (sliceValue) {
+    sliceValue.textContent = sliceRange.value;
+  }
+}
+
+function currentTransforms() {
+  return {
+    flip: {
+      enabled: !!flipEnabled?.checked,
+      axes: ["lr"],
+      p: 0.5,
+    },
+    affine: {
+      enabled: !!affineEnabled?.checked,
+      scales: [0.9, 1.1],
+      degrees: 10,
+      translation: 5,
+    },
+    noise: {
+      enabled: !!noiseEnabled?.checked,
+      mean: 0.0,
+      std: 0.1,
+    },
+  };
+}
+
+let previewInFlight = false;
+
+async function requestPreview() {
+  if (!volumeId || !previewImage) return;
+  if (previewInFlight) return;
+  previewInFlight = true;
+
+  const axis = axisSelect?.value || "axial";
+  const index = Number(sliceRange?.value || 0);
+
+  try {
+    const response = await fetch("/api/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        volume_id: volumeId,
+        axis,
+        index,
+        transforms: currentTransforms(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const blob = await response.blob();
+    previewImage.src = URL.createObjectURL(blob);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    previewInFlight = false;
+  }
+}
+
+axisSelect?.addEventListener("change", () => {
+  updateSliceRange();
+  requestPreview();
+});
+
+sliceRange?.addEventListener("input", () => {
+  if (sliceValue) {
+    sliceValue.textContent = sliceRange.value;
+  }
+  requestPreview();
+});
+
+[flipEnabled, affineEnabled, noiseEnabled].forEach((input) => {
+  input?.addEventListener("change", requestPreview);
+});
+
+exportConfigButton?.addEventListener("click", async () => {
+  try {
+    const response = await fetch("/api/export-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transforms: currentTransforms(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const payload = await response.json();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "torchio-config.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+copyConfigButton?.addEventListener("click", async () => {
+  try {
+    const response = await fetch("/api/export-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transforms: currentTransforms(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const payload = await response.json();
+    const text = payload.python || JSON.stringify(payload.config, null, 2);
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    copyConfigButton.textContent = "Copied";
+    setTimeout(() => {
+      copyConfigButton.textContent = "Copy config";
+    }, 1200);
+  } catch (error) {
+    console.error(error);
+  }
+});

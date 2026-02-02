@@ -38,14 +38,52 @@
           <div class="column-header">
             <h3>Augmentation controls</h3>
           </div>
-          <div class="panel-slot panel-placeholder panel-large">Controls panel</div>
+          <div class="panel-slot panel-large">
+            <div class="controls">
+              <div class="control">
+                <label for="axis-select">Axis</label>
+                <select id="axis-select">
+                  <option value="axial" selected>Axial</option>
+                  <option value="coronal">Coronal</option>
+                  <option value="sagittal">Sagittal</option>
+                </select>
+              </div>
+              <div class="control">
+                <label for="slice-range">Slice</label>
+                <input id="slice-range" type="range" min="0" max="0" value="0" />
+                <span id="slice-value">0</span>
+              </div>
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" id="flip-enabled" checked />
+                  RandomFlip
+                </label>
+              </div>
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" id="affine-enabled" checked />
+                  RandomAffine
+                </label>
+              </div>
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" id="noise-enabled" checked />
+                  RandomNoise
+                </label>
+              </div>
+              <div class="control">
+                <button class="button button-outline" id="export-config">Export config</button>
+                <button class="button button-outline" id="copy-config">Copy config</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="column">
           <div class="column-header">
             <h3>Augmentation preview</h3>
           </div>
           <div class="panel-slot panel-large">
-            <canvas id="canvas-preview" width="1200" height="520"></canvas>
+            <img id="preview-image" class="preview-image" alt="Augmentation preview" />
           </div>
         </div>
       </div>
