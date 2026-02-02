@@ -81,6 +81,10 @@ h1 {
   font-weight: 600;
 }
 
+.workspace {
+  width: 100%;
+}
+
 .card,
 .viewer,
 .workspace {
@@ -197,16 +201,29 @@ canvas {
 
 
 .workspace-grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   height: 100%;
 }
 
 .column {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   min-height: 0;
-  grid-template-rows: auto 1fr;
+  flex: 1 1 0;
+}
+
+.controls {
+  display: grid;
+  gap: 16px;
+  height: 100%;
+  align-content: start;
+  padding: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 6px;
 }
 
 .column-header {
@@ -242,14 +259,9 @@ canvas {
 .panel-large {
   height: 100%;
   min-height: 0;
-}
-
-.controls {
-  display: grid;
-  gap: 16px;
-  height: 100%;
-  align-content: start;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
 }
 
 .control-group {
@@ -283,6 +295,64 @@ canvas {
 .control select,
 .control input[type="range"] {
   width: 100%;
+}
+
+.accordion {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 6px 10px;
+}
+
+.accordion summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.transform-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.transform-row:hover {
+  border-color: var(--border);
+  background: #fff;
+}
+
+.transform-row input[type="checkbox"] {
+  margin: 0;
+}
+
+.transform-params {
+  display: none;
+  grid-column: 2 / -1;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.transform-row input[type="checkbox"]:checked~.transform-params {
+  display: inline;
 }
 
 .checkbox {
@@ -330,7 +400,7 @@ canvas {
   }
 
   .workspace-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    flex-direction: row;
   }
 }
 
