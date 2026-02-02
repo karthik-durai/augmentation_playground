@@ -179,7 +179,8 @@ function syncSelectedViewer() {
   const index = Number(sliceRange?.value || 0);
   const axisIndex = axis === "sagittal" ? 0 : axis === "coronal" ? 1 : 2;
   const maxIndex = Math.max(0, volumeShape[axisIndex] - 1);
-  const viewerIndex = axis === "coronal" ? maxIndex - index : index;
+  const viewerIndex =
+    axis === "coronal" || axis === "sagittal" ? maxIndex - index : index;
   const sliceNorm = volumeShape[axisIndex] > 1 ? viewerIndex / (volumeShape[axisIndex] - 1) : 0.5;
 
   const targetSliceType =
