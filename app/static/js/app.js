@@ -20,6 +20,7 @@ const previewPlaceholder = document.getElementById("preview-placeholder");
 let nvSelected;
 let volumeId = null;
 let volumeShape = null;
+let lastSliceIndex = { sagittal: null, coronal: null, axial: null };
 
 async function initNiivue() {
   if (!canvasSelected) return;
@@ -64,6 +65,14 @@ async function loadVolumeToAll(file) {
     const selectedFile = new File([blob], name, { type: mimeType });
     await nvSelected.loadFromFile(selectedFile);
     nvSelected.drawScene();
+    if (volumeShape) {
+      lastSliceIndex = {
+        sagittal: Math.floor((volumeShape[0] - 1) / 2),
+        coronal: Math.floor((volumeShape[1] - 1) / 2),
+        axial: Math.floor((volumeShape[2] - 1) / 2),
+      };
+    }
+    syncSelectedViewer();
     if (viewerStatus) {
       viewerStatus.textContent = "Volume loaded";
     }
@@ -158,6 +167,69 @@ function updateSliceRange() {
   }
 }
 
+function syncSelectedViewer() {
+  if (!nvSelected || !volumeShape) return;
+  const axis = axisSelect?.value || "axial";
+  const index = Number(sliceRange?.value || 0);
+  const axisIndex = axis === "sagittal" ? 0 : axis === "coronal" ? 1 : 2;
+  const sliceNorm = volumeShape[axisIndex] > 1 ? index / (volumeShape[axisIndex] - 1) : 0.5;
+
+  const target = {
+    sagittal: lastSliceIndex.sagittal ?? Math.floor((volumeShape[0] - 1) / 2),
+    coronal: lastSliceIndex.coronal ?? Math.floor((volumeShape[1] - 1) / 2),
+    axial: lastSliceIndex.axial ?? Math.floor((volumeShape[2] - 1) / 2),
+  };
+  target[axis] = index;
+
+  if (typeof nvSelected.setSliceFrac === "function") {
+    const targetSliceType =
+      axis === "sagittal"
+        ? SLICE_TYPE.SAGITTAL
+        : axis === "coronal"
+          ? SLICE_TYPE.CORONAL
+          : SLICE_TYPE.AXIAL;
+    nvSelected.setSliceType(targetSliceType);
+    if (typeof nvSelected.setSliceMM === "function") {
+      nvSelected.setSliceMM(false);
+    }
+    nvSelected.setSliceFrac(sliceNorm);
+    nvSelected.setSliceType(SLICE_TYPE.MULTIPLANAR);
+    nvSelected.drawScene();
+    lastSliceIndex = target;
+    return;
+  }
+
+  const current = nvSelected.scene?.crosshairPos;
+  if (Array.isArray(current) && current.length >= 3 && typeof nvSelected.moveCrosshairInVox === "function") {
+    const currentVox = current.map((value, idx) => {
+      if (value <= 1.5) {
+        return Math.round(value * (volumeShape[idx] - 1));
+      }
+      return Math.round(value);
+    });
+    const delta = [
+      target.sagittal - currentVox[0],
+      target.coronal - currentVox[1],
+      target.axial - currentVox[2],
+    ];
+    nvSelected.moveCrosshairInVox(delta[0], delta[1], delta[2]);
+    nvSelected.drawScene();
+    lastSliceIndex = target;
+    return;
+  }
+
+  if (typeof nvSelected.moveCrosshairInVox === "function") {
+    const delta = [
+      target.sagittal - (lastSliceIndex.sagittal ?? target.sagittal),
+      target.coronal - (lastSliceIndex.coronal ?? target.coronal),
+      target.axial - (lastSliceIndex.axial ?? target.axial),
+    ];
+    nvSelected.moveCrosshairInVox(delta[0], delta[1], delta[2]);
+    nvSelected.drawScene();
+    lastSliceIndex = target;
+  }
+}
+
 function currentTransforms() {
   return {
     flip: {
@@ -225,6 +297,7 @@ async function requestPreview() {
 
 axisSelect?.addEventListener("change", () => {
   updateSliceRange();
+  syncSelectedViewer();
   requestPreview();
 });
 
@@ -232,6 +305,7 @@ sliceRange?.addEventListener("input", () => {
   if (sliceValue) {
     sliceValue.textContent = sliceRange.value;
   }
+  syncSelectedViewer();
   requestPreview();
 });
 
