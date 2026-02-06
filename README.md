@@ -17,5 +17,12 @@ Open `http://127.0.0.1:8000`.
 
 ```bash
 docker build -t augmentation-playground .
-docker run --rm -p 8000:8000 -v "$PWD/app:/app/app" augmentation-playground
+set -a
+source .env
+set +a
+docker run --rm -p 8000:8000 \
+  --env-file .env \
+  -v "$PWD/app:/app/app" \
+  -v "$BIDS_HOST_PATH:/data/bids:ro" \
+  augmentation-playground
 ```

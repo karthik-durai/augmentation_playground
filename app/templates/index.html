@@ -16,10 +16,15 @@
       </header>
 
       <section class="picker-card">
-        <div class="uploader uploader-compact">
-          <input id="file-input" type="file" accept=".nii,.nii.gz,application/gzip,application/octet-stream" />
-          <label for="file-input" class="button">Choose file</label>
-          <span class="file-meta" id="file-meta">No file selected.</span>
+        <div class="bids-explorer">
+          <div class="bids-header">
+            <div class="bids-title">BIDS Explorer</div>
+            <button class="button button-outline" id="bids-refresh">Refresh</button>
+          </div>
+          <div class="bids-breadcrumbs" id="bids-breadcrumbs"></div>
+          <div class="bids-list" id="bids-list"></div>
+          <div class="file-meta" id="file-meta">No file selected.</div>
+          <div class="status" id="bids-status">Loading BIDS directory…</div>
         </div>
       </section>
     </div>
@@ -77,6 +82,8 @@
 
   <script>
     window.TRANSFORMS_CONFIG = {{ transforms_config | tojson }};
+    window.BIDS_ROOT = {{ bids_root | tojson }};
+    window.BIDS_HOST_PATH = {{ bids_host_path | tojson }};
   </script>
   <script type="module" src="/static/js/app.js"></script>
 </body>

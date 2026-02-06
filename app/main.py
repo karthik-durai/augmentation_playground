@@ -1,4 +1,5 @@
 import io
+import os
 import random
 import tempfile
 import json
@@ -20,6 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 CONFIG_DIR = BASE_DIR / "config"
+BIDS_ROOT = Path(os.getenv("BIDS_ROOT", "/data/bids"))
+BIDS_HOST_PATH = os.getenv("BIDS_HOST_PATH", "")
 
 app = FastAPI(title="Augmentation Playground")
 
@@ -28,6 +31,22 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 _VOLUME_STORE: Dict[str, Dict[str, Any]] = {}
+
+
+def _is_nifti_path(path: Path) -> bool:
+    suffixes = "".join(path.suffixes).lower()
+    return suffixes.endswith(".nii") or suffixes.endswith(".nii.gz")
+
+
+def _resolve_bids_path(relative_path: str | None) -> Path:
+    if not relative_path:
+        relative_path = "."
+    target = (BIDS_ROOT / relative_path).resolve()
+    try:
+        target.relative_to(BIDS_ROOT.resolve())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid BIDS path.") from exc
+    return target
 
 
 def _normalize_to_uint8(array: np.ndarray) -> np.ndarray:
@@ -283,9 +302,88 @@ async def index(request: Request) -> HTMLResponse:
         {
             "request": request,
             "transforms_config": transforms_config,
+            "bids_root": str(BIDS_ROOT),
+            "bids_host_path": BIDS_HOST_PATH,
         },
     )
 
+
+@app.get("/api/bids/tree")
+async def list_bids_tree(path: str | None = None) -> Dict[str, Any]:
+    if not BIDS_ROOT.exists():
+        raise HTTPException(status_code=404, detail="BIDS directory not found.")
+
+    target = _resolve_bids_path(path)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="Path not found.")
+    if not target.is_dir():
+        raise HTTPException(status_code=400, detail="Path is not a directory.")
+
+    entries = []
+    for entry in sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+        if entry.name.startswith("."):
+            continue
+        if entry.is_dir():
+            entries.append(
+                {"name": entry.name, "type": "dir", "path": str(entry.relative_to(BIDS_ROOT))}
+            )
+        elif entry.is_file() and _is_nifti_path(entry):
+            entries.append(
+                {
+                    "name": entry.name,
+                    "type": "file",
+                    "path": str(entry.relative_to(BIDS_ROOT)),
+                    "size": entry.stat().st_size,
+                }
+            )
+
+    return {
+        "path": str(target.relative_to(BIDS_ROOT)) if target != BIDS_ROOT else "",
+        "entries": entries,
+    }
+
+
+@app.get("/api/bids/file")
+async def get_bids_file(path: str) -> Response:
+    if not BIDS_ROOT.exists():
+        raise HTTPException(status_code=404, detail="BIDS directory not found.")
+
+    target = _resolve_bids_path(path)
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="File not found.")
+    if not _is_nifti_path(target):
+        raise HTTPException(status_code=400, detail="Only .nii or .nii.gz supported.")
+
+    return Response(content=target.read_bytes(), media_type="application/octet-stream")
+
+
+@app.post("/api/bids/select")
+async def select_bids_file(payload: Dict[str, Any]) -> Dict[str, Any]:
+    if not BIDS_ROOT.exists():
+        raise HTTPException(status_code=404, detail="BIDS directory not found.")
+
+    relative_path = payload.get("path")
+    if not relative_path:
+        raise HTTPException(status_code=400, detail="Missing path.")
+
+    target = _resolve_bids_path(relative_path)
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="File not found.")
+    if not _is_nifti_path(target):
+        raise HTTPException(status_code=400, detail="Only .nii or .nii.gz supported.")
+
+    try:
+        image = nib.load(str(target))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Unable to read NIfTI: {exc}") from exc
+
+    volume = image.get_fdata(dtype=np.float32)
+    if volume.ndim != 3:
+        raise HTTPException(status_code=400, detail="Expected a 3D NIfTI volume.")
+    volume_id = uuid4().hex
+    _VOLUME_STORE[volume_id] = {"volume": volume}
+
+    return {"volume_id": volume_id, "shape": volume.shape, "filename": target.name}
 
 @app.post("/api/volume")
 async def upload_volume(file: UploadFile) -> Dict[str, Any]:

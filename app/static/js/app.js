@@ -1,8 +1,13 @@
 import { Niivue, SLICE_TYPE } from "https://unpkg.com/@niivue/niivue@0.57.0/dist/index.js";
 
-const fileInput = document.getElementById("file-input");
 const fileMeta = document.getElementById("file-meta");
 const viewerStatus = document.getElementById("viewer-status");
+const bidsList = document.getElementById("bids-list");
+const bidsBreadcrumbs = document.getElementById("bids-breadcrumbs");
+const bidsStatus = document.getElementById("bids-status");
+const bidsRefresh = document.getElementById("bids-refresh");
+const bidsRoot = window.BIDS_ROOT || "";
+const bidsHostPath = window.BIDS_HOST_PATH || "";
 
 const canvasSelected = document.getElementById("canvas-selected");
 const previewImage = document.getElementById("preview-image");
@@ -23,6 +28,7 @@ let volumeId = null;
 let volumeShape = null;
 let lastSliceIndex = { sagittal: null, coronal: null, axial: null };
 let previewSeed = Math.floor(Math.random() * 1e9);
+let bidsPath = "";
 
 async function initNiivue() {
   if (!canvasSelected) return;
@@ -81,13 +87,6 @@ async function loadVolumeToAll(file) {
   }
 }
 
-async function loadSelectedFile(file) {
-  if (!file) return;
-
-  await uploadVolume(file);
-  await loadVolumeToAll(file);
-}
-
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return "";
   const units = ["B", "KB", "MB", "GB"];
@@ -121,14 +120,154 @@ function updateSelection(file) {
   }
 }
 
-fileInput.addEventListener("change", (event) => {
-  const [file] = event.target.files || [];
-  updateSelection(file);
-  loadSelectedFile(file);
-});
+function renderBidsBreadcrumbs() {
+  if (!bidsBreadcrumbs) return;
+  bidsBreadcrumbs.innerHTML = "";
+  const rootButton = document.createElement("button");
+  rootButton.type = "button";
+  rootButton.textContent = "BIDS";
+  rootButton.addEventListener("click", () => loadBidsTree(""));
+  bidsBreadcrumbs.appendChild(rootButton);
 
+  const parts = bidsPath ? bidsPath.split("/") : [];
+  let current = "";
+  parts.forEach((part) => {
+    const sep = document.createElement("span");
+    sep.textContent = " / ";
+    bidsBreadcrumbs.appendChild(sep);
+    current = current ? `${current}/${part}` : part;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = part;
+    button.addEventListener("click", () => loadBidsTree(current));
+    bidsBreadcrumbs.appendChild(button);
+  });
+}
+
+function renderBidsEntries(entries) {
+  if (!bidsList) return;
+  bidsList.innerHTML = "";
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "file-meta";
+    empty.textContent = "No NIfTI files in this folder.";
+    bidsList.appendChild(empty);
+    return;
+  }
+
+  entries.forEach((entry) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "bids-item";
+    row.dataset.path = entry.path;
+    row.dataset.type = entry.type;
+
+    const icon = document.createElement("span");
+    icon.textContent = entry.type === "dir" ? "📁" : "🧠";
+    row.appendChild(icon);
+
+    const name = document.createElement("div");
+    name.className = "bids-name";
+    name.textContent = entry.name;
+    row.appendChild(name);
+
+    const meta = document.createElement("span");
+    meta.textContent = entry.type === "dir" ? "Folder" : formatBytes(entry.size || 0);
+    row.appendChild(meta);
+
+    row.addEventListener("click", () => {
+      if (entry.type === "dir") {
+        loadBidsTree(entry.path);
+      } else {
+        loadBidsFile(entry.path);
+      }
+    });
+
+    bidsList.appendChild(row);
+  });
+}
+
+async function loadBidsTree(path = "") {
+  if (!bidsStatus) return;
+  bidsStatus.textContent = "Loading BIDS directory…";
+  try {
+    const query = path ? `?path=${encodeURIComponent(path)}` : "";
+    const response = await fetch(`/api/bids/tree${query}`);
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    const payload = await response.json();
+    bidsPath = payload.path || "";
+    renderBidsBreadcrumbs();
+    renderBidsEntries(payload.entries || []);
+    if (bidsHostPath) {
+      bidsStatus.textContent = `Host path: ${bidsHostPath}`;
+    } else if (bidsRoot) {
+      bidsStatus.textContent = `Root: ${bidsRoot}`;
+    } else {
+      bidsStatus.textContent = "Select a folder to browse.";
+    }
+  } catch (error) {
+    console.error(error);
+    bidsStatus.textContent = "Unable to load BIDS directory.";
+    if (bidsList) {
+      bidsList.innerHTML = "";
+    }
+  }
+}
+
+async function loadBidsFile(path) {
+  if (!path) return;
+  if (viewerStatus) {
+    viewerStatus.textContent = "Loading volume...";
+  }
+  if (bidsStatus) {
+    bidsStatus.textContent = "Loading file…";
+  }
+  try {
+    const selectResponse = await fetch("/api/bids/select", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path }),
+    });
+    if (!selectResponse.ok) {
+      throw new Error(await selectResponse.text());
+    }
+    const selectPayload = await selectResponse.json();
+    volumeId = selectPayload.volume_id;
+    volumeShape = selectPayload.shape;
+    previewSeed = Math.floor(Math.random() * 1e9);
+    updateSliceRange();
+    requestPreview();
+
+    const fileResponse = await fetch(`/api/bids/file?path=${encodeURIComponent(path)}`);
+    if (!fileResponse.ok) {
+      throw new Error(await fileResponse.text());
+    }
+    const blob = await fileResponse.blob();
+    const file = new File([blob], selectPayload.filename || "volume.nii.gz", {
+      type: "application/octet-stream",
+    });
+    updateSelection(file);
+    await loadVolumeToAll(file);
+    if (bidsStatus) {
+      bidsStatus.textContent = "File loaded.";
+    }
+  } catch (error) {
+    console.error(error);
+    if (viewerStatus) {
+      viewerStatus.textContent = "Failed to load file.";
+    }
+    if (bidsStatus) {
+      bidsStatus.textContent = "Failed to load file.";
+    }
+  }
+}
+
+bidsRefresh?.addEventListener("click", () => loadBidsTree(bidsPath));
 renderTransforms();
 initNiivue();
+loadBidsTree();
 
 async function uploadVolume(file) {
   const formData = new FormData();
