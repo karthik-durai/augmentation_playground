@@ -14,23 +14,11 @@
       <header class="hero">
         <p class="eyebrow">Augmentation Playground</p>
       </header>
-
-      <section class="picker-card">
-        <div class="bids-explorer">
-          <div class="bids-header">
-            <div class="bids-title">BIDS Explorer</div>
-            <button class="button button-outline" id="bids-refresh">Refresh</button>
-          </div>
-          <div class="bids-breadcrumbs" id="bids-breadcrumbs"></div>
-          <div class="bids-list" id="bids-list"></div>
-          <div class="file-meta" id="file-meta">No file selected.</div>
-          <div class="status" id="bids-status">Loading BIDS directory…</div>
-        </div>
-      </section>
     </div>
 
-    <section class="workspace">
-      <div class="workspace-grid">
+    <div class="workspace-layout">
+      <section class="workspace">
+        <div class="workspace-grid">
         <div class="column">
           <div class="column-header">
             <h3>Selected image</h3>
@@ -76,8 +64,38 @@
             <div class="preview-placeholder" id="preview-placeholder">Preview appears here</div>
           </div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+
+      <aside class="explorer-pane">
+        <section class="picker-card">
+          <div class="bids-explorer">
+            <div class="bids-header">
+              <div class="bids-title">BIDS Explorer</div>
+              <div class="bids-actions">
+                <button class="button button-outline" id="bids-refresh">Refresh</button>
+                <div class="bids-path">
+                  <button class="button button-ghost" id="bids-host-toggle" type="button" aria-expanded="false"
+                    aria-controls="bids-host-popover">
+                    Host path
+                  </button>
+                  <div class="popover is-hidden" id="bids-host-popover" role="dialog" aria-live="polite">
+                    <div class="popover-title">Host path</div>
+                    <div class="popover-body" id="bids-host-value"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bids-toolbar">
+              <div class="status" id="bids-status">Loading BIDS directory…</div>
+            </div>
+            <div class="bids-breadcrumbs" id="bids-breadcrumbs"></div>
+            <div class="bids-list" id="bids-list"></div>
+            <div class="file-meta" id="file-meta">No file selected.</div>
+          </div>
+        </section>
+      </aside>
+    </div>
   </main>
 
   <script>

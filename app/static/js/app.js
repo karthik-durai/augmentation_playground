@@ -6,6 +6,9 @@ const bidsList = document.getElementById("bids-list");
 const bidsBreadcrumbs = document.getElementById("bids-breadcrumbs");
 const bidsStatus = document.getElementById("bids-status");
 const bidsRefresh = document.getElementById("bids-refresh");
+const bidsHostToggle = document.getElementById("bids-host-toggle");
+const bidsHostPopover = document.getElementById("bids-host-popover");
+const bidsHostValue = document.getElementById("bids-host-value");
 const bidsRoot = window.BIDS_ROOT || "";
 const bidsHostPath = window.BIDS_HOST_PATH || "";
 
@@ -29,6 +32,7 @@ let volumeShape = null;
 let lastSliceIndex = { sagittal: null, coronal: null, axial: null };
 let previewSeed = Math.floor(Math.random() * 1e9);
 let bidsPath = "";
+let hostPopoverOpen = false;
 
 async function initNiivue() {
   if (!canvasSelected) return;
@@ -144,6 +148,35 @@ function renderBidsBreadcrumbs() {
   });
 }
 
+function setHostPathUI(pathValue) {
+  const hasPath = !!pathValue;
+  if (bidsHostToggle) {
+    bidsHostToggle.classList.toggle("is-hidden", !hasPath);
+    bidsHostToggle.setAttribute("aria-expanded", "false");
+  }
+  if (bidsHostPopover) {
+    bidsHostPopover.classList.add("is-hidden");
+  }
+  if (bidsHostValue) {
+    bidsHostValue.textContent = pathValue || "";
+  }
+  hostPopoverOpen = false;
+}
+
+function closeHostPopover() {
+  if (!bidsHostPopover || !bidsHostToggle) return;
+  bidsHostPopover.classList.add("is-hidden");
+  bidsHostToggle.setAttribute("aria-expanded", "false");
+  hostPopoverOpen = false;
+}
+
+function toggleHostPopover() {
+  if (!bidsHostPopover || !bidsHostToggle) return;
+  hostPopoverOpen = !hostPopoverOpen;
+  bidsHostPopover.classList.toggle("is-hidden", !hostPopoverOpen);
+  bidsHostToggle.setAttribute("aria-expanded", hostPopoverOpen ? "true" : "false");
+}
+
 function renderBidsEntries(entries) {
   if (!bidsList) return;
   bidsList.innerHTML = "";
@@ -201,11 +234,11 @@ async function loadBidsTree(path = "") {
     renderBidsBreadcrumbs();
     renderBidsEntries(payload.entries || []);
     if (bidsHostPath) {
-      bidsStatus.textContent = `Host path: ${bidsHostPath}`;
-    } else if (bidsRoot) {
-      bidsStatus.textContent = `Root: ${bidsRoot}`;
+      setHostPathUI(bidsHostPath);
+      bidsStatus.textContent = "Ready";
     } else {
-      bidsStatus.textContent = "Select a folder to browse.";
+      setHostPathUI("");
+      bidsStatus.textContent = bidsRoot ? "Root ready" : "Select a folder to browse.";
     }
   } catch (error) {
     console.error(error);
@@ -263,6 +296,31 @@ async function loadBidsFile(path) {
     }
   }
 }
+
+if (bidsHostToggle) {
+  bidsHostToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleHostPopover();
+  });
+}
+
+if (bidsHostPopover) {
+  bidsHostPopover.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+}
+
+document.addEventListener("click", () => {
+  if (hostPopoverOpen) {
+    closeHostPopover();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && hostPopoverOpen) {
+    closeHostPopover();
+  }
+});
 
 bidsRefresh?.addEventListener("click", () => loadBidsTree(bidsPath));
 renderTransforms();

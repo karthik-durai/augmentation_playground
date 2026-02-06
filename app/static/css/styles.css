@@ -17,6 +17,10 @@
   box-sizing: border-box;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;
@@ -31,26 +35,31 @@ body {
 }
 
 .page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 56px 24px 24px;
+  margin: 10px;
+  padding: 64px 40px 32px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 36px;
   height: 100svh;
 }
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .hero {
   display: grid;
   gap: 16px;
+  flex: 1 1 auto;
+}
+
+.picker-card {
+  width: 100%;
 }
 
 .eyebrow {
@@ -83,6 +92,19 @@ h1 {
 
 .workspace {
   width: 100%;
+}
+
+.workspace-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.explorer-pane {
+  flex: 0 0 auto;
+  max-width: 100%;
 }
 
 .card,
@@ -167,6 +189,20 @@ h1 {
   box-shadow: 0 8px 16px rgba(15, 76, 92, 0.15);
 }
 
+.button-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.button-ghost:hover {
+  border-color: var(--accent);
+}
+
 .file-meta {
   font-size: 0.85rem;
   color: var(--muted);
@@ -176,7 +212,7 @@ h1 {
 .bids-explorer {
   display: grid;
   gap: 12px;
-  width: min(420px, 100%);
+  width: 100%;
 }
 
 .bids-header {
@@ -184,6 +220,41 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.bids-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bids-actions .button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.bids-actions .button:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.bids-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bids-toolbar .status {
+  margin-top: 0;
+}
+
+.bids-path {
+  position: relative;
 }
 
 .bids-title {
@@ -248,6 +319,39 @@ h1 {
   font-weight: 600;
 }
 
+.popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  max-width: min(320px, 80vw);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow);
+  z-index: 10;
+}
+
+.popover-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.popover-body {
+  font-size: 0.85rem;
+  color: var(--ink);
+  word-break: break-word;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.popover.is-hidden {
+  display: none;
+}
+
 .viewer-canvas,
 .panel-slot {
   position: relative;
@@ -276,6 +380,7 @@ canvas {
   flex-direction: column;
   gap: 20px;
   height: 100%;
+  flex-wrap: wrap;
 }
 
 .column {
@@ -284,6 +389,7 @@ canvas {
   gap: 16px;
   min-height: 0;
   flex: 1 1 0;
+  min-width: 260px;
 }
 
 .controls {
@@ -513,8 +619,22 @@ canvas {
   }
 
   .picker-card {
-    align-self: flex-start;
-    max-width: 360px;
+    align-self: stretch;
+    max-width: 100%;
+  }
+
+  .workspace-layout {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .workspace {
+    flex: 1 1 auto;
+  }
+
+  .explorer-pane {
+    flex: 0 0 300px;
+    max-width: 340px;
   }
 
   .workspace-grid {
