@@ -36,7 +36,7 @@ body {
 
 .page {
   margin: 10px;
-  padding: 64px 40px 32px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   gap: 36px;
